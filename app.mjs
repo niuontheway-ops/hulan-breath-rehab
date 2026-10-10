@@ -1,6 +1,9 @@
 import {createPlan, validateProfile, assessTrainingReadiness} from './clinical.mjs';
 import {readReport, parseReportText, disposeReportWorker} from './reports.mjs';
 import {mountGame} from './game.mjs';
+import {mountDailyAssessment,validateDailyRecords,upsertDailyRecord,evaluateDailyRecord} from './daily.mjs';
+import {mountEducation} from './education.mjs';
+import {createMusicPlayer,mountMusic} from './music.mjs';
 
 const $ = selector => document.querySelector(selector);
 const $$ = selector => [...document.querySelectorAll(selector)];
@@ -24,6 +27,7 @@ const icons = {
   walk:'<circle cx="13" cy="4" r="2"/><path d="m7 11 4-4 4 2 3 3m-7-5-1 8-4 6m4-6 5 6M4 13l3-2"/>',
   activity:'<path d="M3 12h4l3-8 4 16 3-8h4"/>',
   book:'<path d="M12 5c-4-2-7-1-9 0v15c3-2 6-2 9 0 3-2 6-2 9 0V5c-2-1-5-2-9 0v15"/>',
+  music:'<path d="M9 18V5l11-2v13"/><ellipse cx="6" cy="18" rx="3" ry="3"/><ellipse cx="17" cy="16" rx="3" ry="3"/>',
   check:'<path d="m5 12 4 4 10-10"/>',
 };
 function icon(name) { return `<svg class="icon" aria-hidden="true" viewBox="0 0 24 24">${icons[name] || icons.leaf}</svg>`; }
@@ -32,8 +36,21 @@ function localDay(date = new Date()) {
   const parts = new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Shanghai',year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(date);
   return `${parts.find(p=>p.type==='year').value}-${parts.find(p=>p.type==='month').value}-${parts.find(p=>p.type==='day').value}`;
 }
-const state = {profile:null,records:[],persist:false,isDemo:false,plan:null,assessmentDirty:false};
+const state = {profile:null,records:[],dailyRecords:[],persist:false,isDemo:false,plan:null,assessmentDirty:false,dailyDraftGate:null};
 let game = null;
+let dailyView = null;
+let dailyViewDay = null;
+let dailyTopic = null;
+let educationView = null;
+let educationTopic = 'copd';
+const musicPlayer = createMusicPlayer();
+mountMusic($('#music-container'),{player:musicPlayer});
+musicPlayer.subscribe(s=>{
+  $('#training-music-title').textContent=s.track.name;
+  $('#training-music-status').textContent=s.message;
+  $('#training-music-toggle').textContent=s.status==='playing'?'暂停音乐':s.status==='loading'?'取消加载':'播放音乐';
+});
+$('#training-music-toggle').addEventListener('click',()=>{const s=musicPlayer.getState();s.status==='playing'||s.status==='loading'?musicPlayer.pause():musicPlayer.play();});
 let reportResult = null;
 let importInProgress = false;
 let importGeneration = 0;
@@ -44,7 +61,7 @@ function toast(message) { $('#toast').textContent = message; $('#toast').hidden 
 function saveState() {
   if(state.isDemo) return;
   try {
-    if(state.persist) localStorage.setItem(storageKey,JSON.stringify({version:1,consent:true,profile:state.profile,records:state.records}));
+    if(state.persist) localStorage.setItem(storageKey,JSON.stringify({version:1,consent:true,profile:state.profile,records:state.records,dailyRecords:state.dailyRecords}));
     else localStorage.removeItem(storageKey);
     $('#storage-status').textContent = state.persist ? '已开启本机保存。原始报告不保存。' : '当前仅在本次页面中使用，刷新后清除。';
   } catch { state.persist = false; $('#save-local').checked = false; $('#storage-status').textContent = '浏览器无法保存；资料仅保留在当前页面。'; }
@@ -56,6 +73,7 @@ function readStorage() {
     const restorable=item.profile && (validateProfile(item.profile).valid || createPlan(item.profile,new Date()).status==='urgent');
     state.profile = restorable ? item.profile : null;
     state.records = Array.isArray(item.records) ? item.records.filter(r => typeof r?.id==='string' && Number.isFinite(r.completedCycles) && r.completedCycles>0 && Number.isFinite(r.activeDurationMs) && r.activeDurationMs>=0 && !Number.isNaN(new Date(r.finishedAt).getTime()) && r.selfReported===true && !r.isDemo).slice(-500) : [];
+    state.dailyRecords = validateDailyRecords(item.dailyRecords,{today:localDay()});
     state.persist = true;
   } catch { state.persist = false; }
 }
@@ -65,7 +83,42 @@ function makePlan() {
     const draft=createPlan(profileFromForm(),new Date());
     state.plan=draft.status==='urgent'?draft:{...draft,status:'review',title:'评估资料已修改，请先核对',subtitle:'提交当前评估后，再开始训练。',reasons:['当前表单有尚未提交的新资料，原方案暂时停用。'],sessions:[],weekly:[],breathing:{inhaleSeconds:2,exhaleSeconds:4,cycles:0}};
   }
+  const daily=getDailyGate();
+  if(daily && state.plan && state.plan.status!=='urgent') state.plan={...state.plan,status:daily.status,title:daily.title,subtitle:daily.message,reasons:daily.reasons,sessions:[],weekly:[],breathing:{inhaleSeconds:2,exhaleSeconds:4,cycles:0}};
   return state.plan;
+}
+function getDailyGate() {
+  const results=state.dailyRecords.filter(r=>r.day===localDay()).map(evaluateDailyRecord);
+  if(state.dailyDraftGate?.day===localDay())results.unshift(state.dailyDraftGate);
+  return results.find(r=>r.status==='urgent') || results.find(r=>r.status==='review') || null;
+}
+function renderDailySummary() {
+  const todayRecords=state.dailyRecords.filter(r=>r.day===localDay());
+  const gate=getDailyGate();
+  $('#home-daily-summary').textContent=gate ? gate.status==='urgent'?'今日有警示症状，请及时求助':'今日需要医护复核，先休息' : todayRecords.length?'已记录今天的评分与感受':'记录今天的评分与感受';
+  const notice=$('#daily-home-notice');notice.hidden=!gate;
+  if(gate){notice.className=`notice ${gate.status==='urgent'?'notice-danger':''}`;notice.innerHTML=`<h3>${escape(gate.title)}</h3><p>${escape(gate.message)}</p><a class="text-link" href="#daily">查看今日健康评估 →</a>`;}
+}
+function renderDaily(force=false) {
+  if(dailyView && dailyViewDay===localDay() && !force)return;
+  dailyView?.dispose();
+  dailyViewDay=localDay();
+  dailyView=mountDailyAssessment($('#daily-container'),{today:dailyViewDay,initialTopic:dailyTopic||(state.profile?.disease==='other'?educationTopic:state.profile?.disease||educationTopic),records:state.dailyRecords,onSave:record=>{
+    state.dailyRecords=upsertDailyRecord(state.dailyRecords,record);state.dailyDraftGate=null;dailyTopic=record.topic;educationTopic=record.topic;saveState();renderHome();renderDaily(true);
+    const result=evaluateDailyRecord(record);toast(result.status==='recorded'?'已记录今日健康评估。':result.message);
+  }});
+}
+function discardDailyView() {dailyView?.dispose();dailyView=null;dailyViewDay=null;dailyTopic=null;state.dailyDraftGate=null;}
+$('#daily-container').addEventListener('input',event=>{
+  const form=event.target.closest('form');if(!form)return;
+  if(form.elements.day.value!==localDay()){state.dailyDraftGate=null;return;}
+  const urgent=[...form.querySelectorAll('input[name^="red-"]:checked')].length>0 || form.elements.sputumColor.value==='blood';
+  state.dailyDraftGate=urgent ? {day:localDay(),status:'urgent',title:'当日评估中有危险症状，请立即停止训练',message:'请及时获得医疗帮助；持续胸痛、严重气促、晕厥或明显咯血时请拨 120，不要等待保存。',reasons:['当前填写的每日评估报告了危险症状。']} : {day:localDay(),status:'review',title:'每日评估尚未保存，请先核对',message:'完成当前每日评估并保存后，再确认是否适合今天的训练。',reasons:['当日健康记录有尚未保存的修改。']};
+});
+$('#daily-container').addEventListener('reset',()=>{state.dailyDraftGate=null;});
+function renderEducation() {
+  educationView?.dispose();
+  educationView=mountEducation($('#education-container'),{initialTopic:educationTopic,onTopicChange:topic=>{educationTopic=topic;}});
 }
 function metric(value,unit='') { return value == null ? '<strong>—</strong>' : `<strong>${escape(value)}<small>${escape(unit)}</small></strong>`; }
 function renderHome() {
@@ -100,6 +153,7 @@ function renderHome() {
     sessions.innerHTML=`<div class="session-empty"><span class="icon-chip">${icon('leaf')}</span><div><strong>${plan?.status==='urgent'?'现在优先寻求医疗帮助':plan?.status==='review'?'先复核，花园可以等你':'你的专属小目标，还差一步'}</strong><p>${plan?'按上方提示补充评估或联系医护，暂不进行自主训练。':'完成肺功能与症状评估，建议会根据你的状态调整。'}</p></div><a href="#assessment" class="text-link">${plan?'查看评估':'去健康评估'} →</a></div>`;
   }
   renderWeek();
+  renderDailySummary();
 }
 function renderWeek() {
   const today=localDay();
@@ -153,7 +207,7 @@ $('#assessment-form').addEventListener('submit',event=>{
     errors.forEach(({field,message})=>{const el=document.getElementById(field);if(el){el.setAttribute('aria-invalid','true');if(el.closest('.field')){const label=document.createElement('span');label.className='field-error';label.textContent=message;el.parentElement.append(label);}}});
     $('#form-errors').scrollIntoView({behavior:'smooth',block:'center'});return;
   }
-  state.profile=profile;state.assessmentDirty=false;makePlan();saveState();location.hash='home';renderHome();toast(plan.status==='ready'?'已生成起步建议，请与医护确认后练习。':'已生成评估提示，请先联系医护复核。');
+  state.profile=profile;state.assessmentDirty=false;const activePlan=makePlan();saveState();location.hash='home';renderHome();toast(activePlan.status==='ready'?'已生成起步建议，请与医护确认后练习。':'已生成评估提示，请先联系医护复核。');
 });
 $$('input[name="disease"]').forEach(el=>el.addEventListener('change',updateDiseaseFields));
 $('#dyspneaScale').addEventListener('change',()=>updateScale());
@@ -202,9 +256,11 @@ const upload=$('#upload-zone');
 upload.addEventListener('drop',event=>importFile(event.dataTransfer.files[0]));
 $('#parse-text').addEventListener('click',()=>{if(importInProgress){toast('请先取消或等待文件识别。');return;}const text=$('#report-text').value.trim();if(!text){toast('请先粘贴报告中的指标文字。');return;}showCandidates({...parseReportText(text),method:'文字指标提取'});});
 
-function stopGame() {game?.dispose();game=null;}
+function stopGame() {if(game){game.dispose();game=null;musicPlayer.onTrainingState({status:'stopped'});}}
 function renderGarden() {
   stopGame();$('#game-container').innerHTML='';const plan=makePlan();const gate=$('#garden-gate');gate.hidden=false;
+  const daily=getDailyGate();
+  if(daily){gate.innerHTML=`<article class="card gate-card"><span class="icon-chip">${icon('shield')}</span><h2>${escape(daily.title)}</h2><div class="notice ${daily.status==='urgent'?'notice-danger':''}"><p>${escape(daily.message)}</p><ul>${daily.reasons.map(r=>`<li>${escape(r)}</li>`).join('')}</ul></div><div class="gate-actions"><a class="btn-primary" href="#daily">查看今日评估 →</a><a class="btn-secondary" href="#assessment">更新健康画像</a></div></article>`;return;}
   if(!plan||plan.status!=='ready') {
     gate.innerHTML=`<article class="card gate-card"><span class="icon-chip">${icon('shield')}</span><h2>${escape(plan?.title || '花园已经准备好，先了解你的状态')}</h2><p>${escape(plan?.subtitle || '完成健康评估、确认适合居家练习后，就能让小芽随一呼一吸慢慢生长。')}</p>${plan?`<div class="notice ${plan.status==='urgent'?'notice-danger':''}"><ul>${plan.reasons.map(r=>`<li>${escape(r)}</li>`).join('')}</ul></div>`:''}<div class="gate-actions"><a class="btn-primary" href="#assessment">${plan?'更新健康评估':'开始健康评估'} →</a><button class="btn-secondary" id="garden-demo">体验模拟示例</button></div></article>`;
     $('#garden-demo').addEventListener('click',()=>enterDemo('garden'));return;
@@ -215,7 +271,7 @@ function renderGarden() {
     const result=assessTrainingReadiness(check);const currentPlan=makePlan();
     if(!result.allowed||currentPlan.status!=='ready') {const message=$('#readiness-notice');message.hidden=false;message.className=`notice ${result.status==='urgent'?'notice-danger':''}`;message.textContent=result.allowed?currentPlan.subtitle:result.message;return;}
     gate.hidden=true;stopGame();
-    game=mountGame($('#game-container'),{breathing:currentPlan.breathing,onComplete:record=>completeTraining(record),onStop:()=>{renderGarden();toast('已经停止。先休息，感到不适请联系医护。');}});
+    game=mountGame($('#game-container'),{breathing:currentPlan.breathing,onStateChange:frame=>musicPlayer.onTrainingState(frame),onComplete:record=>completeTraining(record),onStop:()=>{renderGarden();toast('已经停止。先休息，感到不适请联系医护。');}});
   });
 }
 function completeTraining(raw) {
@@ -227,7 +283,8 @@ function completeTraining(raw) {
 }
 function renderHistory() {
   const records=state.records;const totalMs=records.reduce((sum,r)=>sum+r.activeDurationMs,0);const days=new Set(records.map(r=>localDay(new Date(r.finishedAt)))).size;
-  $('#export-records').disabled=!records.length;
+  $('#export-records').disabled=!records.length&&!state.dailyRecords.length;
+  $('#history-health').innerHTML=`<div><h2>每日健康评估 · ${state.dailyRecords.length} 条记录</h2><p>气促、体力和疾病评分的变化，可以与医护一起查看。</p></div><a class="text-link" href="#daily">查看评分趋势与历史 →</a>`;
   const stats=`<div class="history-stats"><article class="card history-stat"><span>完成的练习</span><strong>${records.length}<small>次</small></strong></article><article class="card history-stat"><span>练习阶段用时</span><strong>${Math.round(totalMs/60000)}<small>分钟</small></strong></article><article class="card history-stat"><span>留下记录的日子</span><strong>${days}<small>天</small></strong></article></div>`;
   if(!records.length){$('#history-content').innerHTML=stats+`<article class="card history-empty"><span class="icon-chip">${icon('leaf')}</span><h2>第一片新叶，等你慢慢种下</h2><p>完成一次花园练习后，这里会留下你的进度。休息不会扣分，也没有连续打卡压力。</p><a class="btn-primary" href="#garden">去训练花园 →</a></article>`;return;}
   const feelings={comfortable:'舒适放松',neutral:'和平常差不多',uncomfortable:'有些不适'};
@@ -239,16 +296,17 @@ $('#export-plan').addEventListener('click',()=>{
   const lines=['壶兰呼吸 · 康复教育建议',state.isDemo?'模拟患者示例，不能用于实际训练':'适用范围：经医护评估的成人患者；本建议需医护复核',`生成日期：${localDay()}`,`评估日期：${state.profile.assessmentDate}`,`规则版本：${plan.ruleVersion}`,`${plan.title}`,plan.subtitle,'','评估指标',...plan.metrics.map(m=>`${m.label}：${m.value}（${m.detail}）`),'','分流依据',...plan.reasons,'','起步建议',...plan.sessions.map(s=>`${s.title}：${s.minutes} 分钟起步；${s.frequency}\n${s.instruction}\n强度：${s.intensity}`),'','注意事项',...plan.warnings,'','依据',...plan.sourceLinks.map(s=>`${s.label}：${s.url}`),'','本建议为规则化教育建议，尚未经临床验证。不代替面诊、诊断或处方；不调整药物与吸氧流量。'];
   download(`康复教育建议-${localDay()}${state.isDemo?'-模拟示例':''}.txt`,lines.join('\n'));
 });
-$('#export-records').addEventListener('click',()=>{if(!state.records.length)return;download(`呼吸练习记录-${localDay()}${state.isDemo?'-模拟示例':''}.json`,JSON.stringify({format:'hulan-rehab-records',version:1,simulated:state.isDemo,selfReported:true,description:'自主确认的练习记录，不代表呼吸质量或治疗效果',records:state.records},null,2),'application/json');});
+$('#export-records').addEventListener('click',()=>{if(!state.records.length&&!state.dailyRecords.length)return;download(`康复与健康评估记录-${localDay()}${state.isDemo?'-模拟示例':''}.json`,JSON.stringify({format:'hulan-rehab-records',version:1,simulated:state.isDemo,selfReported:true,description:'自主确认的练习与每日健康评估记录，不代表呼吸质量或治疗效果',records:state.records,dailyRecords:state.dailyRecords},null,2),'application/json');});
 
 function enterDemo(destination='home') {
-  if(!state.isDemo)savedState={profile:state.profile,records:state.records,persist:state.persist};
-  state.isDemo=true;state.persist=false;state.records=[];state.assessmentDirty=false;state.profile={disease:'copd',age:62,fev1Percent:65,fev1Fvc:66,spo2:96,dyspneaScale:'mmrc',dyspneaScore:2,act:null,cat:16,stability:'stable',redFlags:{chestPain:false,severeBreathlessness:false,fainting:false,hemoptysis:false},clinicianCleared:true,assessmentDate:localDay(),goal:'daily'};
+  if(!state.isDemo)savedState={profile:state.profile,records:state.records,dailyRecords:state.dailyRecords,persist:state.persist};
+  discardDailyView();
+  state.isDemo=true;state.persist=false;state.records=[];state.dailyRecords=[];state.assessmentDirty=false;state.profile={disease:'copd',age:62,fev1Percent:65,fev1Fvc:66,spo2:96,dyspneaScale:'mmrc',dyspneaScore:2,act:null,cat:16,stability:'stable',redFlags:{chestPain:false,severeBreathlessness:false,fainting:false,hemoptysis:false},clinicianCleared:true,assessmentDate:localDay(),goal:'daily'};
   fillForm();renderHome();location.hash=destination;if(destination==='garden')renderGarden();toast('当前是模拟患者示例，实际使用请退出并填写自己的评估。');
 }
 $('#demo-button').addEventListener('click',()=>enterDemo());
 $('#exit-demo').addEventListener('click',()=>{
-  stopGame();Object.assign(state,savedState || {profile:null,records:[],persist:false});state.isDemo=false;state.assessmentDirty=false;savedState=null;$('#assessment-form').reset();fillForm();$('#report-candidates').hidden=true;$('#report-status').hidden=true;$('#report-text').value='';reportResult=null;location.hash='home';renderHome();toast('已退出示例，恢复你原来的资料。');
+  stopGame();discardDailyView();Object.assign(state,savedState || {profile:null,records:[],dailyRecords:[],persist:false});state.isDemo=false;state.assessmentDirty=false;savedState=null;$('#assessment-form').reset();fillForm();$('#report-candidates').hidden=true;$('#report-status').hidden=true;$('#report-text').value='';reportResult=null;location.hash='home';renderHome();toast('已退出示例，恢复你原来的资料。');
 });
 $('#privacy-open').addEventListener('click',()=>{$('#save-local').checked=state.persist;$('#save-local').disabled=state.isDemo;$('#storage-status').textContent=state.isDemo?'示例数据不会保存到本机。':state.persist?'已开启本机保存。':'默认仅保留当前页面资料。';$('#privacy-dialog').showModal();});
 $('#privacy-footer').addEventListener('click',()=>$('#privacy-open').click());
@@ -256,26 +314,28 @@ $('#sources-open').addEventListener('click',()=>$('#sources-dialog').showModal()
 $('#save-local').addEventListener('change',event=>{state.persist=event.target.checked;saveState();});
 $('#clear-data').addEventListener('click',async()=>{
   if(!confirm('清除本浏览器的评估数值与全部练习记录？此操作不可恢复。'))return;
-  stopGame();++importGeneration;await disposeReportWorker();importInProgress=false;
+  stopGame();discardDailyView();++importGeneration;await disposeReportWorker();importInProgress=false;
   try{localStorage.removeItem(storageKey);}catch{}
-  Object.assign(state,{profile:null,records:[],persist:false,isDemo:false,plan:null,assessmentDirty:false});savedState=null;reportResult=null;
+  Object.assign(state,{profile:null,records:[],dailyRecords:[],persist:false,isDemo:false,plan:null,assessmentDirty:false});savedState=null;reportResult=null;
   $('#assessment-form').reset();updateScale();fillForm();updateDiseaseFields();$('#report-candidates').innerHTML='';$('#report-candidates').hidden=true;$('#report-status').hidden=true;$('#report-text').value='';$('#save-local').checked=false;$('#save-local').disabled=false;$('#storage-status').textContent='已清除本机评估与记录。';clearErrors();location.hash='home';renderHome();
 });
 $$('dialog').forEach(dialog=>dialog.addEventListener('click',event=>{if(event.target===dialog){const r=dialog.getBoundingClientRect();if(event.clientX<r.left||event.clientX>r.right||event.clientY<r.top||event.clientY>r.bottom)dialog.close();}}));
 
-const pageTitles={home:'今日康复',assessment:'健康评估',garden:'训练花园',history:'康复记录'};
+const pageTitles={home:'今日康复',daily:'每日健康评估',assessment:'报告与健康画像',education:'疾病宣教',music:'音乐疗法',garden:'训练花园',history:'康复记录'};
 function navigate() {
   const page=location.hash.slice(1) in pageTitles ? location.hash.slice(1):'home';
   if(page!=='garden')stopGame();
   $$('.view').forEach(el=>el.hidden=el.id!==`view-${page}`);
-  $$('[data-page]').forEach(el=>{el.classList.toggle('active',el.dataset.page===page);if(el.dataset.page===page)el.setAttribute('aria-current','page');else el.removeAttribute('aria-current');});
+  $$('[data-page]').forEach(el=>{const active=el.dataset.page===page||(page==='assessment'&&el.dataset.page==='daily'&&window.matchMedia('(max-width:760px)').matches);el.classList.toggle('active',active);if(active)el.setAttribute('aria-current','page');else el.removeAttribute('aria-current');});
   $('#page-title').textContent=pageTitles[page];document.title=`壶兰呼吸 · ${pageTitles[page]}`;
   if(page==='home')renderHome();if(page==='garden')renderGarden();if(page==='history')renderHistory();
+  if(page==='daily')renderDaily();
+  if(page==='education')renderEducation();else{educationView?.dispose();educationView=null;}
   $('#demo-banner').hidden=!state.isDemo;
   window.scrollTo({top:0,behavior:'instant'});
 }
 window.addEventListener('hashchange',navigate);
-window.addEventListener('pagehide',()=>{stopGame();disposeReportWorker();});
+window.addEventListener('pagehide',()=>{stopGame();musicPlayer.pause();disposeReportWorker();});
 fillIcons();readStorage();fillForm();updateDiseaseFields();$('#assessmentDate').max=localDay();
 $('#today-date').textContent=new Intl.DateTimeFormat('zh-CN',{timeZone:'Asia/Shanghai',month:'long',day:'numeric',weekday:'long'}).format(new Date());
 renderHome();navigate();

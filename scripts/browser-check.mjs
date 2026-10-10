@@ -20,7 +20,7 @@ const errors=[];const remoteRequests=[];let passed=0;
 page.on('pageerror',e=>errors.push(e.message));
 page.on('request',request=>{if(!request.url().startsWith('http://127.0.0.1:4173')&&!request.url().startsWith('blob:')&&!request.url().startsWith('data:'))remoteRequests.push(request.url());});
 async function check(name,fn){await fn();passed++;console.log(`PASS ${name}`);}
-async function go(name){await page.locator(`a[data-page="${name}"]`).click();await page.locator(`#view-${name}`).waitFor({state:'visible'});}
+async function go(name){const link=page.locator(`a[data-page="${name}"]`);if(await link.isVisible())await link.click();else await page.evaluate(name=>{location.hash=name;},name);await page.locator(`#view-${name}`).waitFor({state:'visible'});}
 async function openEmptyTestPage(){await page.goto('http://127.0.0.1:4173');assert.equal(await page.evaluate(()=>localStorage.length),0);}
 async function demo(){await page.locator('#demo-button').click();await page.locator('.session-card').first().waitFor();}
 async function enterGarden(){await go('garden');await page.locator('#readiness-form').waitFor();await page.locator('#readiness-form input[type="checkbox"]').evaluateAll(inputs=>inputs.forEach(i=>i.click()));await page.locator('#readiness-form button[type="submit"]').click();await page.locator('.game-shell').waitFor();}

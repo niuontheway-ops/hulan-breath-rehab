@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { createBreathingSession, getBreathingFrame } from '../game.mjs';
+import { createBreathingSession, getBreathingFrame, getPatientAnimationFrame } from '../game.mjs';
 
 const config = { inhaleSeconds: 2, exhaleSeconds: 4, cycles: 2 };
 
@@ -155,4 +155,125 @@ test('invalid durations and counts fail before a session starts', () => {
     { cycles: 1.5 },
   ]) assert.throws(() => createBreathingSession(invalid), RangeError);
   assert.throws(() => getBreathingFrame(Infinity), TypeError);
+});
+
+test('the patient gently expands on inhale, returns on exhale, and shows the correct airflow', () => {
+  const start = getPatientAnimationFrame(getBreathingFrame(0, config));
+  const halfwayIn = getPatientAnimationFrame(getBreathingFrame(1000, config));
+  const almostIn = getPatientAnimationFrame(getBreathingFrame(1999, config));
+  const exhaleStart = getPatientAnimationFrame(getBreathingFrame(2000, config));
+  const halfwayOut = getPatientAnimationFrame(getBreathingFrame(4000, config));
+  const done = getPatientAnimationFrame(getBreathingFrame(6000, config));
+  assert.equal(start.abdomenScaleX, 1);
+  assert.ok(start.abdomenScaleX < halfwayIn.abdomenScaleX);
+  assert.ok(halfwayIn.abdomenScaleX < almostIn.abdomenScaleX);
+  assert.ok(Math.abs(almostIn.breathLevel - exhaleStart.breathLevel) < 0.001);
+  assert.ok(exhaleStart.abdomenScaleX > halfwayOut.abdomenScaleX);
+  assert.equal(halfwayIn.abdomenScaleX, halfwayOut.abdomenScaleX);
+  assert.ok(halfwayIn.chestScaleX > 1);
+  assert.ok(halfwayIn.handOffsetX > 0);
+  assert.ok(halfwayIn.inhaleOpacity > 0);
+  assert.equal(halfwayIn.exhaleOpacity, 0);
+  assert.equal(halfwayOut.inhaleOpacity, 0);
+  assert.ok(halfwayOut.exhaleOpacity > 0);
+  assert.equal(done.abdomenScaleX, 1);
+  assert.equal(done.inhaleOpacity, 0);
+  assert.equal(done.exhaleOpacity, 0);
+});
+
+test('the paused patient pose does not change during a long break', () => {
+  let time = 0;
+  const session = createBreathingSession(config, { now: () => time });
+  session.start();
+  time = 2500;
+  session.pause('hidden');
+  const pose = getPatientAnimationFrame(session.getState());
+  time += 60_000;
+  assert.deepEqual(getPatientAnimationFrame(session.getState()), pose);
+  session.resume();
+  time += 500;
+  const resumed = getPatientAnimationFrame(session.getState());
+  assert.ok(resumed.abdomenScaleX < pose.abdomenScaleX);
+  assert.ok(resumed.handOffsetX < pose.handOffsetX);
+});
+
+test('reduced motion keeps a static pose and static arrows while retaining phase cues', () => {
+  const first = getPatientAnimationFrame(getBreathingFrame(200, config), { reducedMotion: true });
+  const later = getPatientAnimationFrame(getBreathingFrame(1700, config), { reducedMotion: true });
+  assert.deepEqual(first, later);
+  assert.equal(first.abdomenScaleX, 1);
+  assert.equal(first.abdomenScaleY, 1);
+  assert.equal(first.chestScaleX, 1);
+  assert.equal(first.chestScaleY, 1);
+  assert.equal(first.handOffsetX, 0);
+  assert.equal(first.flowOffset, 0);
+  assert.ok(first.inhaleOpacity > 0);
+  assert.equal(first.exhaleOpacity, 0);
+  const exhale = getPatientAnimationFrame(getBreathingFrame(3000, config), { reducedMotion: true });
+  assert.equal(exhale.inhaleOpacity, 0);
+  assert.ok(exhale.exhaleOpacity > 0);
+});
+
+test('state notifications report phases and pauses once, without notifying on every frame', () => {
+  let time = 0;
+  const states = [];
+  const session = createBreathingSession(config, { now: () => time, onStateChange: (state) => states.push(state) });
+  session.getState();
+  session.getState();
+  session.start();
+  for (time = 100; time < 2000; time += 100) session.getState();
+  assert.equal(states.length, 2);
+  time = 2000;
+  session.getState();
+  session.pause('hidden');
+  time = 50_000;
+  session.getState();
+  session.resume();
+  time += 4000;
+  session.getState();
+  session.confirm();
+  time += 6000;
+  session.getState();
+  session.confirm();
+  session.getState();
+  assert.equal(session.confirm(), false);
+  assert.deepEqual(states.map((state) => `${state.status}:${state.phase}:${state.completedCycles}`), [
+    'idle:ready:0',
+    'running:inhale:0',
+    'running:exhale:0',
+    'paused:exhale:0',
+    'running:exhale:0',
+    'awaiting-confirmation:confirm:0',
+    'running:inhale:1',
+    'awaiting-confirmation:confirm:1',
+    'completed:complete:2',
+  ]);
+  assert.equal(states[3].pauseReason, 'hidden');
+  assert.equal(states.at(-1).activeDurationMs, 12_000);
+  assert.equal(states.at(-1).selfReported, true);
+});
+
+test('stopping emits a terminal state immediately and observer copies cannot alter the session', () => {
+  let time = 0;
+  const statuses = [];
+  const session = createBreathingSession(config, {
+    now: () => time,
+    onStateChange: (state) => {
+      statuses.push(state.status);
+      state.status = 'observer-edited';
+      state.completedCycles = 100;
+    },
+  });
+  session.getState();
+  session.start();
+  time = 500;
+  session.stop('manual');
+  const state = session.getState();
+  assert.deepEqual(statuses, ['idle', 'running', 'stopped']);
+  assert.equal(state.status, 'stopped');
+  assert.equal(state.completedCycles, 0);
+  assert.equal(state.activeDurationMs, 500);
+  session.stop();
+  session.resume();
+  assert.deepEqual(statuses, ['idle', 'running', 'stopped']);
 });

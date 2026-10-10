@@ -14,4 +14,12 @@
 - https://cdn.jsdelivr.net/npm/@tesseract.js-data/chi_sim/4.0.0_best_int/chi_sim.traineddata.gz
 - https://cdn.jsdelivr.net/npm/@tesseract.js-data/eng/4.0.0_best_int/eng.traineddata.gz
 
-构建产物 `build-info.json` 记录语言模型 SHA-256。页面插画为程序化 SVG；品牌名称和原应用入口保留来源，不把插画用作官方 LOGO。
+构建产物 `build-info.json` 记录语言模型 SHA-256。页面与动作示范插画为程序化 SVG。`assets/hulan-logo.jpg` 使用品牌方提供的正式图片，未重绘或修改；品牌、科室名称及该图片的权利归相应权利人所有。
+
+## 原版音乐
+
+音乐目录保留原应用列出的 7 首班得瑞曲目：安妮的仙境、初雪、迷雾水珠、清晨、童年记忆、雪之梦、月光水岸。音频从 [原应用](https://niuontheway-ops.github.io/human-breath/) 加载，未复制到本仓库或离线交付包。原应用标注“仅供非商业用途”；这不是开源或转授权证明，正式托管及公开使用应由运营方核实相关播放授权。本应用不授予音频版权。
+
+## 健康教育与量表
+
+疾病宣教保留原应用的主题及日常照护范围，正文经安全核对、改写，并在每张卡片链接具体的官方资料；网页与文档不转载完整指南。MRC 简明中文分级提示注明来源及改写：Used with the permission of the Medical Research Council。未声称是经验证的中文量表或获得 MRC 背书。ACT、CAT、ESS 和 FTND 仅录入既有总分，未复制其问卷题目。

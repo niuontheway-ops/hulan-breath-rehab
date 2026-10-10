@@ -17,9 +17,9 @@ for(const [name,version] of Object.entries(expected)) {
 if(path.dirname(dist)!==path.resolve(root))throw new Error('Invalid build directory');
 await rm(dist,{recursive:true,force:true});
 await mkdir(dist,{recursive:true});
-for(const name of ['index.html','styles.css','app.mjs','clinical.mjs','reports.mjs','game.mjs'])await cp(path.join(root,name),path.join(dist,name));
+for(const name of ['index.html','styles.css','app.mjs','clinical.mjs','reports.mjs','game.mjs','daily.mjs','education.mjs','music.mjs'])await cp(path.join(root,name),path.join(dist,name));
 const vendor=path.join(dist,'assets','vendor');
-await cp(path.join(root,'assets','favicon.svg'),path.join(dist,'assets','favicon.svg'));
+for(const name of ['favicon.svg','hulan-logo.jpg'])await cp(path.join(root,'assets',name),path.join(dist,'assets',name));
 const pdf=path.join(vendor,'pdfjs');await mkdir(pdf,{recursive:true});
 for(const name of ['pdf.mjs','pdf.worker.mjs'])await cp(path.join(modules,'pdfjs-dist','build',name),path.join(pdf,name));
 for(const name of ['cmaps','standard_fonts','wasm'])await cp(path.join(modules,'pdfjs-dist',name),path.join(pdf,name),{recursive:true});

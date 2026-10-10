@@ -5,7 +5,7 @@ import {fileURLToPath} from 'node:url';
 
 const root=fileURLToPath(new URL('../dist/',import.meta.url));
 const port=Number(process.env.PORT||4173);
-const mime={'.html':'text/html; charset=utf-8','.css':'text/css; charset=utf-8','.mjs':'text/javascript; charset=utf-8','.js':'text/javascript; charset=utf-8','.json':'application/json; charset=utf-8','.svg':'image/svg+xml','.wasm':'application/wasm','.gz':'application/gzip','.bcmap':'application/octet-stream','.ttf':'font/ttf','.pfb':'application/octet-stream'};
+const mime={'.html':'text/html; charset=utf-8','.css':'text/css; charset=utf-8','.mjs':'text/javascript; charset=utf-8','.js':'text/javascript; charset=utf-8','.json':'application/json; charset=utf-8','.svg':'image/svg+xml','.jpg':'image/jpeg','.jpeg':'image/jpeg','.png':'image/png','.webp':'image/webp','.wasm':'application/wasm','.gz':'application/gzip','.bcmap':'application/octet-stream','.ttf':'font/ttf','.pfb':'application/octet-stream'};
 try{await stat(path.join(root,'index.html'));}catch{console.error('请先运行 pnpm build，生成 dist 后再启动。');process.exit(1);}
 const server=createServer(async(req,res)=>{
   if(!['GET','HEAD'].includes(req.method)){res.writeHead(405);res.end('Method not allowed');return;}

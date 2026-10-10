@@ -58,11 +58,15 @@ const canTrain = plan.status === 'ready' && readiness.allowed;
 - [ATS 2023 成人慢性呼吸疾病肺康复指南](https://doi.org/10.1164/rccm.202306-1066ST)：支持成人稳定期慢阻肺的专业肺康复；正式康复涉及评估、教育和适配的运动训练。本模块不把远程或居家康复的支持意见解释为未经评估的自动处方。
 - [GINA 2026 策略报告](https://ginasthma.org/2026-gina-strategy-report/)：ACT 为 5–25，20–25 为较好控制，16–19 与 5–15 提示控制不足；规律活动及热身需结合运动诱发症状应对。呼吸练习仅为常规哮喘管理的补充，不能保证改善肺功能或减少发作。报告正文第 43、66、70 页；[官方 PDF](https://ginasthma.org/wp-content/uploads/2026/05/GINA-2026-Strategy-Report-WMS.pdf)。本仓库仅链接和简要释义，不存放或转载完整报告。
 - [UKRI MRC 量表与使用条件](https://www.ukri.org/councils/mrc/facilities-and-resources/find-an-mrc-facility-or-resource/mrc-dyspnoea-scale/)：原始等级为 1–5，用于呼吸困难造成的活动受限，使用需要适当署名并注明改动。
-- [COPD Foundation 呼吸技巧](https://www.copdfoundation.org/Learn-More/I-am-New-to-COPD/Breathing-Techniques.aspx)：训练前询问医护是否适合；缩唇呼吸示例为鼻吸约 2 秒、缓慢呼气 4–6 秒。腹式呼吸应先由专业人员指导，因此本模块不提供腹式呼吸自动教程。
+- [COPD Foundation 呼吸技巧](https://www.copdfoundation.org/Learn-More/I-am-New-to-COPD/Breathing-Techniques.aspx)：训练前询问医护是否适合；缩唇呼吸示例为鼻吸约 2 秒、缓慢呼气 4–6 秒。人物的腹部起伏仅为经医护示范、确认适合后的轻柔动作说明，不要求刻意深吸、用力鼓腹或屏息。
 - [COPD Foundation 运动与评估](https://www.copdfoundation.org/Learn-More/I-am-a-Person-with-COPD/Exercise.aspx)：开始训练前讨论个人安全的运动范围，运动处方及监护由医护制定。
 - [CAT 官方使用说明](https://www.catestonline.org/hcp-homepage/clinical-practice.html)：总分 0–40，不能用作 COPD 诊断。肺功能、症状影响和其他因素需要综合考虑。本模块只记录既有总分。
 
 ## 验证与边界
+
+每日健康评估由 `daily.mjs` 独立记录，不自动覆写健康画像或改变处方。当日胸痛、严重气促、晕厥或咯血优先提示求助；症状加重或不确定、低血氧、较高自评气促和疲劳、痰液变化、mMRC≥3或MRC≥4、慢阻肺CAT≥30、低ACT、未确认成人与疾病类别等提示复核。SpO₂≤92%、气促数字自评≥7、疲劳数字自评≥8及上述评分门槛是保守产品规则。当天尚未保存的评估修改也暂停自主训练，危险症状不用等待保存。历史记录不替代当天检查。ACT 反映过去 4 周，既有量表总分按实际完成日期保存及绘制趋势，不要求每日重新填写。
+
+宣教覆盖原应用的 12 类主题。固定氧流量与固定疫苗间隔改为按个人医嘱及接种史评估；气胸乘机与咯血求助提示依相应官方来源改写。每张卡片提供可点来源，核对日期为 2026-10-10。保留一般健康教育不意味着这些病种全部开放自动训练；个体化建议仍遵守上文病种分流。
 
 以 Node.js 内置测试运行 `node --test tests/clinical.test.mjs`，覆盖资料校验、非法数字、危险症状优先级、未成年人和未评估场景、低血氧边界、MRC 偏移、ACT 分界、病种分流、日期与闰年、资料过期、非可训练状态和训练前再次确认。
 
