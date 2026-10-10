@@ -8,6 +8,7 @@
 | 中文和英文识别模型 | @tesseract.js-data/chi_sim、eng，4.0.0_best_int | Apache-2.0 | https://github.com/naptha/tessdata |
 | Playwright（开发验证） | 1.62.1 | Apache-2.0 | https://github.com/microsoft/playwright |
 | pdf-lib（模拟 PDF 测试） | 1.17.1 | MIT | https://github.com/Hopding/pdf-lib |
+| edge-tts（语音生产工具） | 7.2.8 | LGPLv3；SRT composer 为 MIT | https://github.com/rany2/edge-tts |
 
 构建时将运行依赖的许可证复制至 `dist/assets/vendor/`，PDF.js 的字体和字符映射资源保留上游资源文件。语言数据来源：
 
@@ -15,6 +16,8 @@
 - https://cdn.jsdelivr.net/npm/@tesseract.js-data/eng/4.0.0_best_int/eng.traineddata.gz
 
 构建产物 `build-info.json` 记录语言模型 SHA-256。页面与动作示范插画为程序化 SVG。`assets/hulan-logo.jpg` 使用品牌方提供的正式图片，未重绘或修改；品牌、科室名称及该图片的权利归相应权利人所有。
+
+宣教场景素材为本应用制作的虚构人物画面，不是患者照片或第三方机构官方视频。中文旁白通过 Microsoft Edge 在线神经语音制作，不进行真人声音克隆；生成方法与素材来源见 `docs/education-video-generation.md`、`docs/education-film-design.md`。edge-tts 未随网页运行时分发，播放已封装的 MP4 不依赖该工具或外部语音服务。
 
 ## 原版音乐
 

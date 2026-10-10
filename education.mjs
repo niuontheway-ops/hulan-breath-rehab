@@ -537,7 +537,7 @@ export function getEducation(topicId) {
     urgent: [ALERT[id]],
     details: data.sections.map(({ title, items }) => ({ title, items: [...items] })),
     additionalAlerts: [...data.urgent], sources: keys.map(key => ({ ...SOURCE[key] })),
-    video: { src: `assets/education-videos/${id}.mp4`, captions: `assets/education-videos/${id}.vtt`, poster: `assets/chapters/${id}.svg`, title: `${EDUCATION_TOPICS.find(item => item.id === id).shortName} · 日常照护短片`, kind: 'local-captioned', checked: '2026-10-11' },
+    video: { src: `assets/education-videos/${id}.mp4`, captions: `assets/education-videos/${id}.vtt`, poster: `assets/education-scenes/${id}.webp`, title: `${EDUCATION_TOPICS.find(item => item.id === id).shortName} · 日常照护短片`, kind: 'local-captioned', checked: '2026-10-11' },
     videoCards: EDUCATION_VIDEO_SCRIPTS[id].map(item => ({ ...item })),
   };
 }

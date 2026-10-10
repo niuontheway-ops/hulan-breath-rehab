@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { createBreathingSession, getBreathingFrame, getPatientAnimationFrame } from '../game.mjs';
+import { createBreathingSession, getBreathingFrame, getPatientAnimationFrame, getPatientPoseGeometry } from '../game.mjs';
 
 const config = { inhaleSeconds: 2, exhaleSeconds: 4, cycles: 2 };
 
@@ -195,6 +195,41 @@ test('the paused patient pose does not change during a long break', () => {
   const resumed = getPatientAnimationFrame(session.getState());
   assert.ok(resumed.abdomenScaleX < pose.abdomenScaleX);
   assert.ok(resumed.handOffsetX < pose.handOffsetX);
+});
+
+test('lips round gradually at the beginning of exhalation and relax for nasal inspiration', () => {
+  const relaxed = getPatientAnimationFrame(getBreathingFrame(2000, config));
+  const forming = getPatientAnimationFrame(getBreathingFrame(2150, config));
+  const rounded = getPatientAnimationFrame(getBreathingFrame(2600, config));
+  assert.equal(relaxed.lipRoundness, 0);
+  assert.ok(forming.lipRoundness > 0 && forming.lipRoundness < 1);
+  assert.equal(rounded.lipRoundness, 1);
+  assert.ok(relaxed.lipOpening < forming.lipOpening);
+  assert.ok(forming.lipOpening < rounded.lipOpening);
+  assert.equal(getPatientAnimationFrame(getBreathingFrame(1000, config)).lipRoundness, 0);
+});
+
+test('connected forearms keep both elbow positions fixed while hand targets follow the body', () => {
+  const rest = getPatientPoseGeometry(getPatientAnimationFrame(getBreathingFrame(0, config)));
+  const filled = getPatientPoseGeometry(getPatientAnimationFrame(getBreathingFrame(2000, config)));
+  assert.ok(rest.abdomenForearm.startsWith('M164 229Q180 269 '));
+  assert.ok(filled.abdomenForearm.startsWith('M164 229Q180 269 '));
+  assert.ok(rest.chestForearm.startsWith('M272 212Q282 195 '));
+  assert.ok(filled.chestForearm.startsWith('M272 212Q282 195 '));
+  assert.notEqual(rest.abdomenForearm, filled.abdomenForearm);
+  assert.notEqual(rest.chestForearm, filled.chestForearm);
+  assert.notEqual(rest.belly, filled.belly);
+  assert.notEqual(rest.detailBelly, filled.detailBelly);
+  assert.ok(filled.detailHandX > rest.detailHandX);
+});
+
+test('a paused pose preserves connected hand targets and continuous lip geometry', () => {
+  let time = 0;
+  const session = createBreathingSession(config, { now: () => time });
+  session.start();time = 2300;session.pause();
+  const paused = getPatientPoseGeometry(getPatientAnimationFrame(session.getState()));
+  time += 8000;
+  assert.deepEqual(getPatientPoseGeometry(getPatientAnimationFrame(session.getState())), paused);
 });
 
 test('reduced motion keeps a static pose and static arrows while retaining phase cues', () => {

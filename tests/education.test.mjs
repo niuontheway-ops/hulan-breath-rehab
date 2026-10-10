@@ -39,7 +39,7 @@ test('each topic contains short actions, a local video with captions, care detai
       assert.equal(data.image.src, `assets/chapters/${topic.id}.svg`);
       assert.equal(data.video.src, `assets/education-videos/${topic.id}.mp4`);
       assert.equal(data.video.captions, `assets/education-videos/${topic.id}.vtt`);
-      assert.equal(data.video.poster, data.image.src);
+      assert.equal(data.video.poster, `assets/education-scenes/${topic.id}.webp`);
       assert.equal(data.video.kind, 'local-captioned');
       assert.equal(data.videoCards.length, 4);
       assert.deepEqual(data.videoCards, EDUCATION_VIDEO_SCRIPTS[topic.id]);

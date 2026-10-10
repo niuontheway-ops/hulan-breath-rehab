@@ -50,19 +50,48 @@ export function getPatientAnimationFrame(frame, { reducedMotion = false } = {}) 
   const progress = Number.isFinite(frame.phaseProgress) ? Math.min(1, Math.max(0, frame.phaseProgress)) : 0;
   const inhale = frame.phase === 'inhale';
   const exhale = frame.phase === 'exhale';
-  const level = reducedMotion ? 0 : inhale ? progress : exhale ? 1 - progress : 0;
+  const eased = progress * progress * (3 - 2 * progress);
+  const level = reducedMotion ? 0 : inhale ? eased : exhale ? 1 - eased : 0;
   const cueOpacity = reducedMotion ? 0.8 : 0.6 + Math.sin(progress * Math.PI) * 0.3;
+  const lipProgress = Math.min(1, progress / 0.14);
+  const lipRoundness = exhale ? reducedMotion ? 1 : lipProgress * lipProgress * (3 - 2 * lipProgress) : 0;
   return {
     breathLevel: level,
     abdomenScaleX: 1 + level * 0.12,
     abdomenScaleY: 1 + level * 0.035,
     chestScaleX: 1 + level * 0.025,
     chestScaleY: 1 + level * 0.015,
-    handOffsetX: level * 6,
-    handOffsetY: level * -2,
+    handOffsetX: level * 18,
+    handOffsetY: level * -3,
+    chestHandOffsetX: level * 2,
+    lipRoundness,
+    lipOpening: 0.8 + lipRoundness * 3.8,
     flowOffset: reducedMotion ? 0 : progress * 12,
     inhaleOpacity: inhale ? cueOpacity : 0,
     exhaleOpacity: exhale ? cueOpacity : 0,
+  };
+}
+
+/** Fixed elbows and moving hand targets keep the demonstration's arm joints connected. */
+export function getPatientPoseGeometry(pose) {
+  const x = pose.handOffsetX;
+  const y = pose.handOffsetY;
+  const c = pose.chestHandOffsetX;
+  const r = pose.lipRoundness;
+  const detail = pose.breathLevel * 26;
+  return {
+    belly: `M174 203Q226 190 280 204C${300 + x} 231 ${299 + x} 263 284 279Q238 304 172 288Q160 252 174 203Z`,
+    bellySeam: `M279 211Q${300 + x} 248 284 276`,
+    bellyFold: `M227 265Q${253 + x * 0.4} 272 ${278 + x * 0.3} 263M196 283Q237 293 275 277`,
+    abdomenForearm: `M164 229Q180 269 ${267 + x} ${254 + y}`,
+    forearmHighlight: `M168 236Q197 259 ${256 + x} ${250 + y}`,
+    chestForearm: `M272 212Q282 195 ${258 + c} ${191 + y * 0.15}`,
+    lips: `M${271 + 5 * r} ${113 - 2 * r}Q${278 + 6 * r} ${111 - 2 * r} ${283 + 6 * r} 114Q${285 + 4 * r} ${118 + 2 * r} ${274 + 4 * r} ${117 + 2 * r}Q${273 + 3 * r} 114 ${271 + 5 * r} ${113 - 2 * r}Z`,
+    detailLips: `M${109 + 13 * r} ${105 - 3 * r}Q${121 + 14 * r} ${100 - 3 * r} ${130 + 11 * r} 105Q${133 + 12 * r} ${113 + 6 * r} ${109 + 15 * r} ${110 + 6 * r}Q${112 + 12 * r} 108 ${109 + 13 * r} ${105 - 3 * r}Z`,
+    detailBelly: `M41 12Q104 8 119 22Q${158 + detail} 46 145 133H40Z`,
+    detailBellyLine: `M124 25Q${159 + detail} 66 145 131`,
+    detailArm: `M30 77Q58 114 ${130 + detail * 0.65} ${92 + y}`,
+    detailHandX: detail * 0.65,
   };
 }
 
@@ -200,6 +229,10 @@ const gameStyles = `
 @media(max-width:700px){.game-visuals{grid-template-columns:minmax(0,1fr);gap:13px;margin:18px 18px}.game-demonstration{padding:16px}.game-patient{max-height:285px}.game-demo-explanation{min-height:0}.game-visuals .game-landscape{padding-top:44px;padding-bottom:45px}.game-visuals .game-scene{max-height:220px;min-height:0}.game-garden-heading{font-size:16px;top:14px;left:18px}}
 @media(max-width:540px){.game-heading{padding:20px 18px 0;gap:10px}.game-heading p{font-size:13px}.game-chip{font-size:11px;padding:4px 8px}.game-console{padding:0 18px 21px}.game-guide{gap:13px;padding:16px 14px;grid-template-columns:70px 1fr}.game-orbit{width:67px;height:67px}.game-phase{font-size:20px}.game-instruction{font-size:13px}.game-garden-note{left:18px;bottom:10px;font-size:12px}.game-controls{gap:8px}.game-shell button{padding:10px 14px}.game-shell .game-primary{flex-basis:100%}.game-controls .game-secondary,.game-controls .game-stop{flex:1}.game-scene{min-height:195px;object-fit:cover}}
 @media(prefers-reduced-motion:reduce){.game-current{animation:none}.game-plant-leaf,.game-flower,.game-progress-fill,.game-shell button{transition:none}}
+.game-visuals{grid-template-columns:minmax(0,1.85fr) minmax(230px,.9fr);gap:20px}.game-demonstration{padding:22px;background:linear-gradient(145deg,#fff,#f7f9f3);border-radius:24px;box-shadow:0 10px 28px #2a58450a}.game-demo-heading span{font-size:12px}.game-patient-stage{position:relative;background:radial-gradient(ellipse at 65% 20%,#fbf5e8,#edf4ea 70%);border:1px solid #e3eadd;border-radius:20px}.game-patient{max-height:355px}.game-detail-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-bottom:16px}.game-detail{min-width:0;margin:0;padding:11px 12px 8px;border:1px solid #dce7d6;background:#fff;border-radius:17px}.game-detail figcaption{display:flex;align-items:center;gap:7px;font-weight:700;color:#285749;font-size:14px}.game-detail figcaption span{width:23px;height:23px;display:inline-grid;place-items:center;background:#ebf3e3;color:#365f3f;border-radius:50%;font-size:11px}.game-detail svg{display:block;width:100%;height:auto;max-height:125px;overflow:visible}.game-detail-label{font-size:12px;margin:1px 0 0;color:#526959}.game-demo-controls{margin-top:14px}.game-demo-explanation{min-height:0;margin-top:9px}.game-pose-controls{display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin:13px 0 0;padding-top:12px;border-top:1px solid #e1e9db}.game-pose-controls>span{font-size:12px;color:#59705e}.game-shell .game-pose-button{min-height:42px;padding:6px 10px;font-size:12px;border-radius:10px;font-weight:600}.game-shell .game-pose-button[aria-pressed="true"]{background:#e3eddb;border-color:#80a566;color:#315b3b}.game-patient [data-game-focus]{opacity:0}.game-patient[data-focus="inhale"] [data-game-focus="inhale"],.game-patient[data-focus="exhale"] [data-game-focus="exhale"],.game-patient[data-focus="abdomen"] [data-game-focus="abdomen"]{opacity:.8}.game-shell[data-inspection="true"] .game-demo-step{color:#76542f}.game-shell .game-detail svg text{font:inherit;font-size:13px}
+@media(max-width:1020px){.game-visuals{grid-template-columns:minmax(0,1fr)}.game-visuals .game-landscape{padding-top:44px;padding-bottom:40px}.game-visuals .game-scene{max-height:185px;min-height:0}.game-patient{max-height:365px}}
+@media(max-width:540px){.game-demonstration{padding:15px}.game-patient{max-height:315px}.game-detail-grid{gap:8px}.game-detail{padding:10px 9px 8px;border-radius:14px}.game-detail figcaption{font-size:12px;gap:5px}.game-detail figcaption span{width:20px;height:20px;font-size:10px;flex-shrink:0}.game-detail-label{font-size:12px}.game-demo-heading{flex-wrap:wrap}.game-pose-controls{gap:6px}.game-pose-controls>span{flex-basis:100%}.game-shell .game-pose-button{flex:1;min-width:0;padding:8px 5px;min-height:44px}}
+body.senior-mode .game-detail-grid{grid-template-columns:minmax(0,1fr)}body.senior-mode .game-detail figcaption{font-size:20px}body.senior-mode .game-detail svg{max-height:170px}body.senior-mode .game-pose-controls>span{font-size:18px}body.senior-mode .game-pose-controls{gap:9px}
 `;
 
 function sceneMarkup(id) {
@@ -227,34 +260,45 @@ function sceneMarkup(id) {
 }
 
 function patientMarkup(id) {
-  return `<svg class="game-patient" data-game-patient data-focus="abdomen" data-animation-phase="ready" data-expansion="0" data-motion="rest" viewBox="110 28 310 326" role="img" aria-labelledby="${id}-patient-title ${id}-patient-desc">
-    <title id="${id}-patient-title">坐位呼吸动作示范</title>
-    <desc id="${id}-patient-desc">成人示范坐在有靠背的椅子上，双脚着地，肩颈放松，手轻放腹部。鼻吸和缩唇缓慢呼气是主要节奏，腹部和胸廓自然轻轻起伏。腹部动作须先由医护示范并确认适合使用者，保持轻柔，不刻意深吸或用力鼓腹。箭头显示气流方向。这是动作示范，不是对使用者实际呼吸的检测。</desc>
-    <defs><marker id="${id}-air-arrow" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M1 1L8 5L1 9" fill="none" stroke="#216858" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></marker></defs>
-    <ellipse cx="218" cy="332" rx="136" ry="15" fill="#e0e9d6"/>
-    <path d="M134 153V272H257M146 270L134 324M246 270L261 323" stroke="#a3b59d" stroke-width="12" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
-    <path d="M154 253Q192 237 234 249L285 280L301 325Q290 339 277 328L242 291L182 281Z" fill="#718979"/>
-    <path d="M174 261Q198 259 226 275L237 324Q228 335 215 326L206 295L163 282Z" fill="#899f89"/>
-    <path d="M277 321Q289 320 300 326L316 333Q319 342 306 343H278Q270 334 277 321ZM215 321Q227 320 237 326L252 334Q254 341 240 342H214Q208 333 215 321Z" fill="#3c5649"/>
-    <path d="M178 106L174 132Q190 146 213 132L207 109Z" fill="#d6ab94"/>
-    <path d="M172 127Q198 118 221 137C246 163 271 208 260 245Q237 269 197 260L157 250C147 213 146 158 172 127Z" fill="#6d9f87"/>
-    <g data-game-chest><path d="M177 145Q198 131 218 147Q235 160 242 184Q209 191 177 180Z" fill="#7cad92"/></g>
-    <g data-game-abdomen data-expansion="0"><path d="M181 182C209 169 247 180 258 207Q270 236 251 248Q214 262 181 239Z" fill="#83b295"/><path d="M246 181Q273 218 251 248" fill="none" stroke="#54836a" stroke-width="2" stroke-linecap="round"/></g>
-    <path d="M174 143Q158 166 169 189L190 207" fill="none" stroke="#578c72" stroke-width="20" stroke-linecap="round"/>
-    <path d="M218 147Q240 165 236 187L227 201" fill="none" stroke="#65997c" stroke-width="18" stroke-linecap="round"/>
-    <g data-game-hands><path d="M183 202Q205 218 234 216" fill="none" stroke="#dfb79e" stroke-width="13" stroke-linecap="round"/><path d="M228 198L215 214L226 224" fill="none" stroke="#d4a98f" stroke-width="11" stroke-linecap="round"/><ellipse cx="239" cy="214" rx="13" ry="7" fill="#e1bca4" transform="rotate(-10 239 214)"/><path d="M236 212L250 211M236 216L248 215" fill="none" stroke="#bf8f76" stroke-width="1" stroke-linecap="round"/></g>
-    <path d="M168 72C166 48 188 36 211 46Q231 53 231 75L240 84L232 91Q236 106 222 115C201 125 176 109 170 92Z" fill="#e3bea8"/>
-    <path d="M169 81Q156 62 170 48C184 33 212 35 225 52L228 70Q211 65 201 54Q181 56 179 78L174 96L168 88Z" fill="#65796a"/>
-    <path d="M174 49Q195 34 215 47M171 59Q181 44 194 43" stroke="#a6b8a5" stroke-width="6" fill="none" stroke-linecap="round"/>
-    <ellipse cx="178" cy="82" rx="6" ry="9" fill="#d8aa91"/><path d="M210 75Q217 79 223 76" fill="none" stroke="#607462" stroke-width="2" stroke-linecap="round"/><path d="M230 88L235 89" fill="none" stroke="#b6856d" stroke-width="1.5" stroke-linecap="round"/>
-    <path data-game-mouth d="M228 100Q234 102 238 100" fill="none" stroke="#a96f59" stroke-width="2" stroke-linecap="round"/>
-    <g data-game-inhale-flow opacity="0" data-active="false"><path d="M323 74Q289 68 254 82" fill="none" stroke="#216858" stroke-width="3" stroke-linecap="round" marker-end="url(#${id}-air-arrow)"/><path d="M311 57Q290 57 274 65" fill="none" stroke="#81ad88" stroke-width="2" stroke-linecap="round"/><text x="332" y="73" fill="#216858" font-size="17">鼻吸</text></g>
-    <g data-game-exhale-flow opacity="0" data-active="false"><path d="M248 103Q272 99 293 111L334 111" fill="none" stroke="#216858" stroke-width="3" stroke-linecap="round" marker-end="url(#${id}-air-arrow)"/><path d="M254 115Q273 120 290 121M255 94Q273 89 287 95" fill="none" stroke="#81ad88" stroke-width="2" stroke-linecap="round"/><text x="302" y="143" fill="#216858" font-size="16">缓慢呼气</text></g>
-    <ellipse data-game-focus="inhale" cx="236" cy="84" rx="20" ry="15" fill="none" stroke="#6e995d" stroke-width="2" stroke-dasharray="4 5"/>
-    <ellipse data-game-focus="exhale" cx="237" cy="103" rx="19" ry="14" fill="none" stroke="#6e995d" stroke-width="2" stroke-dasharray="4 5"/>
-    <ellipse data-game-focus="abdomen" cx="229" cy="213" rx="42" ry="35" fill="none" stroke="#6e995d" stroke-width="2" stroke-dasharray="4 5"/>
-    <path d="M286 218L267 217" stroke="#83a777" stroke-width="1.5" stroke-linecap="round"/><text x="294" y="214" fill="#53685f" font-size="15">手轻放腹部</text><text x="294" y="236" fill="#647268" font-size="13">肩颈放松</text>
+  return `<svg xmlns="http://www.w3.org/2000/svg" class="game-patient" data-game-patient data-focus="abdomen" data-animation-phase="ready" data-expansion="0" data-motion="rest" viewBox="35 15 410 430" role="img" aria-labelledby="${id}-patient-title ${id}-patient-desc">
+    <title id="${id}-patient-title">双手轻放胸腹的坐位呼吸动态示范</title>
+    <desc id="${id}-patient-desc">成人侧坐于有靠背的椅子，双脚着地，肩颈放松。一手轻放胸部，一手轻放腹部。鼻吸时腹部轮廓和腹部手自然向外移动；缩唇呼气时回落。下方放大镜同步显示嘴唇收拢和腹部起伏。腹部示范须由医护确认适合，保持轻柔，不刻意深吸或用力鼓腹。画面动作适度放大以便看清，不表示实际应达到的幅度。</desc>
+    <defs>
+      <linearGradient id="${id}-skin" x1="0" x2="1" y1="0" y2=".5"><stop stop-color="#e6b79d"/><stop offset=".55" stop-color="#f6d6bd"/><stop offset="1" stop-color="#dba88f"/></linearGradient>
+      <linearGradient id="${id}-shirt" x1="0" x2="1" y1="0" y2=".6"><stop stop-color="#427964"/><stop offset=".45" stop-color="#86b99a"/><stop offset="1" stop-color="#528c74"/></linearGradient>
+      <linearGradient id="${id}-pants" x1="0" x2="1" y1="0" y2="1"><stop stop-color="#546d62"/><stop offset="1" stop-color="#849b88"/></linearGradient>
+      <linearGradient id="${id}-hair" x1="0" x2="1" y1="0" y2="1"><stop stop-color="#c3c7bb"/><stop offset=".6" stop-color="#829082"/><stop offset="1" stop-color="#5e7466"/></linearGradient>
+      <linearGradient id="${id}-chair" x1="0" x2="1"><stop stop-color="#ab9c7e"/><stop offset=".5" stop-color="#d8c9a7"/><stop offset="1" stop-color="#a9997d"/></linearGradient>
+      <marker id="${id}-air-arrow" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M1 1L8 5L1 9" fill="none" stroke="#216858" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></marker>
+    </defs>
+    <circle cx="267" cy="162" r="121" fill="#dce9d1" opacity=".45"/>
+    <path d="M80 406H400" stroke="#cbd9be" stroke-width="1.5"/><ellipse cx="241" cy="413" rx="135" ry="12" fill="#ccd7bf" opacity=".65"/>
+    <path d="M126 190L127 316M133 310L116 410M248 310L269 410" stroke="url(#${id}-chair)" stroke-width="12" stroke-linecap="round" fill="none"/><rect x="109" y="163" width="52" height="124" rx="18" fill="#c1ccb6"/><path d="M115 176V265" stroke="#edf0df" stroke-width="3" stroke-linecap="round"/><rect x="119" y="295" width="161" height="19" rx="9" fill="url(#${id}-chair)"/>
+    <path d="M165 277C195 269 236 277 263 302L300 327L315 394Q303 410 289 397L268 348L207 323L156 313Z" fill="url(#${id}-pants)"/><path d="M159 298Q186 282 211 305L239 329L229 395Q216 405 204 394L202 345L158 326Z" fill="#789081"/><path d="M169 304Q187 305 203 322M263 319L284 340L300 384M219 335L214 382" fill="none" stroke="#a2b3a0" stroke-width="2" stroke-linecap="round"/>
+    <path d="M205 389Q217 386 231 393L249 406Q253 416 242 418H202Q194 407 205 389ZM290 390Q303 387 315 393L335 406Q339 415 326 418H287Q280 405 290 390Z" fill="#304f43"/><path d="M199 413H248M286 413H335" stroke="#789788" stroke-width="3" stroke-linecap="round"/>
+    <path d="M213 120L210 151Q230 167 251 150L248 119" fill="url(#${id}-skin)"/><path d="M217 129L216 147Q233 155 248 141" fill="#c7987f" opacity=".38"/>
+    <g data-game-chest><path d="M175 157Q191 140 212 144Q230 161 252 150C269 164 279 186 280 208L173 214Q157 183 175 157Z" fill="url(#${id}-shirt)"/><path d="M211 145Q229 170 252 151" fill="none" stroke="#c7dac5" stroke-width="5" stroke-linecap="round"/><path d="M204 176L203 201M211 181L211 197" stroke="#a9c8ad" stroke-width="2" opacity=".7" stroke-linecap="round"/></g>
+    <g data-game-abdomen data-expansion="0"><path data-game-belly-shape d="M174 203Q226 190 280 204C300 231 299 263 284 279Q238 304 172 288Q160 252 174 203Z" fill="url(#${id}-shirt)"/><path data-game-belly-seam d="M279 211Q300 248 284 276" stroke="#3e715c" stroke-width="2" fill="none" stroke-linecap="round"/><path data-game-belly-fold d="M227 265Q253 272 278 263M196 283Q237 293 275 277" stroke="#bdd1b7" stroke-width="2" fill="none" opacity=".6" stroke-linecap="round"/></g>
+    <path d="M249 166Q280 181 272 214" stroke="#52886e" stroke-width="26" fill="none" stroke-linecap="round"/><path d="M257 171Q270 182 269 195" stroke="#a1c4a7" stroke-width="3" fill="none" stroke-linecap="round"/>
+    <g data-game-chest-arm><path data-game-chest-forearm d="M272 212Q282 195 258 191" fill="none" stroke="url(#${id}-skin)" stroke-width="17" stroke-linecap="round"/><g data-game-chest-hand><path d="M259 191L247 188Q239 186 234 189L239 193L234 195Q231 199 237 201L249 204Q258 205 264 199Z" fill="url(#${id}-skin)"/><path d="M239 193L252 196M238 198L252 201" stroke="#bd8e75" stroke-width="1.2" fill="none" stroke-linecap="round"/></g></g>
+    <path d="M176 167Q148 194 163 232" fill="none" stroke="#4b7f69" stroke-width="31" stroke-linecap="round"/><path d="M165 177Q155 198 159 214" stroke="#9dc0a4" stroke-width="3" fill="none" stroke-linecap="round"/>
+    <g data-game-hands><path data-game-abdomen-forearm d="M164 229Q180 269 267 254" fill="none" stroke="url(#${id}-skin)" stroke-width="20" stroke-linecap="round"/><path data-game-forearm-highlight d="M168 236Q197 259 256 250" fill="none" stroke="#ffe6cf" stroke-width="2.2" stroke-linecap="round" opacity=".7"/><g data-game-abdomen-hand><path d="M260 245Q269 238 276 241L284 245L294 247Q298 251 292 253L297 256Q300 260 293 260L281 259L270 266Q262 266 258 260Z" fill="url(#${id}-skin)"/><path d="M278 247L292 251M276 253L294 256M273 257L286 260" fill="none" stroke="#b98a74" stroke-width="1.2" stroke-linecap="round"/></g></g>
+    <path d="M199 75C195 44 223 27 249 36Q274 42 277 75L287 92Q291 98 281 101Q283 114 273 125Q258 143 231 133Q205 123 201 99Z" fill="url(#${id}-skin)"/>
+    <path d="M200 99C185 85 187 50 207 35Q235 16 263 33Q283 43 278 75Q256 69 248 48Q229 52 222 71L211 84L213 111L204 106Z" fill="url(#${id}-hair)"/><path d="M206 40Q233 25 257 38M199 55Q215 33 242 35M208 59Q223 40 246 42" stroke="#d7d9c9" stroke-width="3" fill="none" stroke-linecap="round" opacity=".75"/>
+    <ellipse cx="212" cy="94" rx="9" ry="13" fill="#ddb198"/><path d="M211 87Q218 87 215 99" fill="none" stroke="#bd8a72" stroke-width="1.5" stroke-linecap="round"/><path d="M250 78Q262 74 272 80" fill="none" stroke="#687d6d" stroke-width="2.8" stroke-linecap="round"/><path d="M252 86Q261 91 270 86" fill="none" stroke="#5b705f" stroke-width="2" stroke-linecap="round"/><path d="M276 100L281 101M272 120Q264 126 254 125" fill="none" stroke="#bf8d74" stroke-width="1.6" stroke-linecap="round"/>
+    <ellipse cx="260" cy="103" rx="12" ry="7" fill="#e9ac98" opacity=".32"/><path data-game-mouth d="M271 113Q278 115 283 113Q278 118 271 115Z" fill="#c18474" stroke="#945e50" stroke-width="1.4" stroke-linecap="round"/><ellipse data-game-mouth-opening cx="280" cy="115" rx=".7" ry=".6" fill="#754a41"/>
+    <g data-game-inhale-flow opacity="0" data-active="false"><path d="M381 70Q337 65 300 91" fill="none" stroke="#216858" stroke-width="3.6" stroke-linecap="round" marker-end="url(#${id}-air-arrow)"/><path d="M367 50Q337 49 313 66" fill="none" stroke="#86b28a" stroke-width="2.3" stroke-linecap="round"/><text x="339" y="41" fill="#285f4d" font-size="17" font-weight="600">轻轻鼻吸</text></g>
+    <g data-game-exhale-flow opacity="0" data-active="false"><path d="M297 117Q324 111 345 125L398 125" fill="none" stroke="#216858" stroke-width="3.6" stroke-linecap="round" marker-end="url(#${id}-air-arrow)"/><path d="M303 136Q326 146 354 142M302 99Q329 91 352 103" fill="none" stroke="#86b28a" stroke-width="2.2" stroke-linecap="round"/><text x="328" y="167" fill="#285f4d" font-size="17" font-weight="600">缓慢呼气</text></g>
+    <ellipse data-game-focus="inhale" cx="281" cy="94" rx="18" ry="15" fill="none" stroke="#73a269" stroke-width="2" stroke-dasharray="3 5"/><ellipse data-game-focus="exhale" cx="281" cy="115" rx="20" ry="15" fill="none" stroke="#73a269" stroke-width="2" stroke-dasharray="3 5"/><ellipse data-game-focus="abdomen" cx="280" cy="251" rx="40" ry="35" fill="none" stroke="#73a269" stroke-width="2" stroke-dasharray="3 5"/>
+    <g fill="#53695a" font-size="13"><path d="M301 198H337M318 252H347" stroke="#91ac7e" stroke-width="1.3"/><text x="339" y="199">一手轻放胸部</text><text x="349" y="254">一手轻放腹部</text></g>
   </svg>`;
+}
+
+function detailMarkup(id) {
+  return `<div class="game-detail-grid" aria-label="同步动作放大示范">
+    <figure class="game-detail"><figcaption><span>01</span>嘴唇与气流</figcaption><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 270 155" role="img" aria-label="嘴唇从自然轻闭到轻轻收拢，气流方向随吸呼阶段变化"><defs><linearGradient id="${id}-lip-skin" x1="0" x2="1"><stop stop-color="#f8dbc2"/><stop offset="1" stop-color="#e4b294"/></linearGradient><marker id="${id}-detail-arrow" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M2 2L8 5L2 8" stroke="#216858" fill="none" stroke-width="1.5" stroke-linecap="round"/></marker></defs><path d="M12 8H88Q119 17 123 43L141 68Q143 74 129 76L124 99Q135 113 121 123L113 144H12Z" fill="url(#${id}-lip-skin)"/><path d="M121 76L128 77M91 42Q105 39 112 44" stroke="#b98268" stroke-width="2" fill="none" stroke-linecap="round"/><path data-game-detail-lips d="M109 105Q122 101 130 105Q123 113 109 110Z" fill="#c78573" stroke="#935b4e" stroke-width="1.5"/><ellipse data-game-detail-opening cx="124" cy="107" rx="1" ry=".7" fill="#744a40"/><g data-game-detail-inhale opacity="0"><path d="M229 44Q181 39 151 69" fill="none" stroke="#2e765f" stroke-width="3" marker-end="url(#${id}-detail-arrow)"/><text x="172" y="30" fill="#2d5d4a">鼻吸</text></g><g data-game-detail-exhale opacity="0"><path d="M150 107H236" fill="none" stroke="#2e765f" stroke-width="3" marker-end="url(#${id}-detail-arrow)"/><path d="M161 89Q188 80 216 87M160 124Q188 135 217 126" stroke="#9abe91" stroke-width="2" fill="none"/><text x="164" y="148" fill="#2d5d4a">缓慢呼出</text></g></svg><p class="game-detail-label" data-game-lip-label>嘴唇自然放松</p></figure>
+    <figure class="game-detail"><figcaption><span>02</span>腹部与手</figcaption><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 270 155" role="img" aria-label="腹部自然向外起伏，腹部上的手跟随轮廓移动"><defs><marker id="${id}-belly-arrow" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M2 2L8 5L2 8" stroke="#216858" fill="none" stroke-width="1.5" stroke-linecap="round"/></marker></defs><path d="M41 12Q104 8 119 22Q158 46 145 133H40Z" fill="#e4eddf" stroke="#b6c8ae" stroke-width="1.5" stroke-dasharray="4 5"/><path data-game-detail-belly d="M41 12Q104 8 119 22Q158 46 145 133H40Z" fill="#78a88b"/><path data-game-detail-belly-line d="M124 25Q159 66 145 131" stroke="#3f715c" stroke-width="2.5" fill="none"/><path data-game-detail-arm d="M30 77Q58 114 130 92" fill="none" stroke="#edc3a5" stroke-width="21" stroke-linecap="round"/><g data-game-detail-hand><path d="M126 84Q136 77 146 82L160 87Q166 92 158 94L165 99Q166 104 157 103L143 101Q128 112 122 100Z" fill="#f2ccb0"/><path d="M143 86L158 91M140 94L159 99" stroke="#ba8b73" stroke-width="1.4" fill="none" stroke-linecap="round"/></g><path data-game-detail-belly-arrow d="M192 78H236" stroke="#216858" stroke-width="3" fill="none" marker-end="url(#${id}-belly-arrow)"/><text x="189" y="123" fill="#2d5d4a" data-game-belly-text>自然起伏</text></svg><p class="game-detail-label" data-game-belly-label>手轻放，不用力鼓腹</p></figure>
+  </div>`;
 }
 
 const demonstrationNotes = {
@@ -278,7 +322,7 @@ export function mountGame(container, { breathing = {}, onComplete = () => {}, on
   root.innerHTML = `<style>${gameStyles}</style>
     <div class="game-heading"><div><h3>呼吸小花园</h3><p>跟着人物示范，轻轻吸气、缓慢呼气。每一轮都由你自己确认。</p></div><span class="game-chip">轻松练习</span></div>
     <div class="game-visuals">
-      <section class="game-demonstration" aria-labelledby="${id}-demo-heading"><div class="game-demo-heading"><h4 id="${id}-demo-heading">跟着人物练习</h4><span>坐位动作示范</span></div><div class="game-patient-stage">${patientMarkup(id)}</div><p class="game-demo-step" data-game-demo-step>坐稳，肩颈放松</p><p class="game-demo-instruction" data-game-demo-instruction>双脚着地，手轻放腹部。先看清动作，准备好了再开始。</p><div class="game-demo-controls" role="group" aria-label="查看呼吸动作解说"><button type="button" class="game-demo-button" data-game-demo="inhale" aria-pressed="false">鼻吸</button><button type="button" class="game-demo-button" data-game-demo="exhale" aria-pressed="false">缩唇呼气</button><button type="button" class="game-demo-button" data-game-demo="abdomen" aria-pressed="true">腹部观察</button></div><p class="game-demo-explanation" data-game-demo-explanation aria-live="polite">${demonstrationNotes.abdomen}</p><p class="game-reduced-note" data-game-reduced-note></p></section>
+      <section class="game-demonstration" aria-labelledby="${id}-demo-heading"><div class="game-demo-heading"><h4 id="${id}-demo-heading">跟着人物练习</h4><span>动作与倒计时同步</span></div><div class="game-patient-stage">${patientMarkup(id)}</div>${detailMarkup(id)}<p class="game-demo-step" data-game-demo-step>坐稳，肩颈放松</p><p class="game-demo-instruction" data-game-demo-instruction>双脚着地，一手轻放胸部，一手轻放腹部。</p><div class="game-demo-controls" role="group" aria-label="查看呼吸动作解说"><button type="button" class="game-demo-button" data-game-demo="inhale" aria-pressed="false">鼻吸</button><button type="button" class="game-demo-button" data-game-demo="exhale" aria-pressed="false">缩唇呼气</button><button type="button" class="game-demo-button" data-game-demo="abdomen" aria-pressed="true">腹部观察</button></div><p class="game-demo-explanation" data-game-demo-explanation aria-live="polite">${demonstrationNotes.abdomen}</p><div class="game-pose-controls" role="group" aria-label="动作静帧查看"><span>看清动作</span><button class="game-pose-button" type="button" data-game-pose="inhale" aria-pressed="false">吸气静帧</button><button class="game-pose-button" type="button" data-game-pose="exhale" aria-pressed="false">呼气静帧</button><button class="game-pose-button" type="button" data-game-pose="follow" aria-pressed="true">跟随节奏</button></div><p class="game-reduced-note" data-game-reduced-note></p></section>
       <div class="game-landscape"><h4 class="game-garden-heading">成长小花园</h4>${sceneMarkup(id)}<span class="game-garden-note" data-game-garden-note>小苗在等你，一起慢慢来</span></div>
     </div>
     <div class="game-console">
@@ -311,8 +355,17 @@ export function mountGame(container, { breathing = {}, onComplete = () => {}, on
     patient: root.querySelector('[data-game-patient]'),
     chest: root.querySelector('[data-game-chest]'),
     abdomen: root.querySelector('[data-game-abdomen]'),
+    bellyShape: root.querySelector('[data-game-belly-shape]'),
+    bellySeam: root.querySelector('[data-game-belly-seam]'),
+    bellyFold: root.querySelector('[data-game-belly-fold]'),
     hands: root.querySelector('[data-game-hands]'),
+    abdomenHand: root.querySelector('[data-game-abdomen-hand]'),
+    abdomenForearm: root.querySelector('[data-game-abdomen-forearm]'),
+    forearmHighlight: root.querySelector('[data-game-forearm-highlight]'),
+    chestHand: root.querySelector('[data-game-chest-hand]'),
+    chestForearm: root.querySelector('[data-game-chest-forearm]'),
     mouth: root.querySelector('[data-game-mouth]'),
+    mouthOpening: root.querySelector('[data-game-mouth-opening]'),
     inhaleFlow: root.querySelector('[data-game-inhale-flow]'),
     exhaleFlow: root.querySelector('[data-game-exhale-flow]'),
     demoStep: root.querySelector('[data-game-demo-step]'),
@@ -320,6 +373,19 @@ export function mountGame(container, { breathing = {}, onComplete = () => {}, on
     demoButtons: [...root.querySelectorAll('[data-game-demo]')],
     demoExplanation: root.querySelector('[data-game-demo-explanation]'),
     reducedNote: root.querySelector('[data-game-reduced-note]'),
+    poseButtons: [...root.querySelectorAll('[data-game-pose]')],
+    detailLips: root.querySelector('[data-game-detail-lips]'),
+    detailOpening: root.querySelector('[data-game-detail-opening]'),
+    detailInhale: root.querySelector('[data-game-detail-inhale]'),
+    detailExhale: root.querySelector('[data-game-detail-exhale]'),
+    detailBelly: root.querySelector('[data-game-detail-belly]'),
+    detailBellyLine: root.querySelector('[data-game-detail-belly-line]'),
+    detailArm: root.querySelector('[data-game-detail-arm]'),
+    detailHand: root.querySelector('[data-game-detail-hand]'),
+    detailBellyArrow: root.querySelector('[data-game-detail-belly-arrow]'),
+    bellyText: root.querySelector('[data-game-belly-text]'),
+    lipLabel: root.querySelector('[data-game-lip-label]'),
+    bellyLabel: root.querySelector('[data-game-belly-label]'),
     primary: root.querySelector('[data-game-action="primary"]'),
     pause: root.querySelector('[data-game-action="pause"]'),
     stop: root.querySelector('[data-game-action="stop"]'),
@@ -334,6 +400,7 @@ export function mountGame(container, { breathing = {}, onComplete = () => {}, on
   let lastUtterance = null;
   let completedCallbackSent = false;
   let previousPatientFrame = null;
+  let inspectionPhase = null;
 
   function cancelSpeech() {
     if (lastUtterance && synth) synth.cancel();
@@ -377,30 +444,61 @@ export function mountGame(container, { breathing = {}, onComplete = () => {}, on
   }
 
   function renderPatient(state) {
-    let pose = getPatientAnimationFrame(state, { reducedMotion: motionQuery.matches });
-    if (state.status === 'stopped' && previousPatientFrame && !motionQuery.matches) {
+    const demonstrationFrame = inspectionPhase ? { phase: inspectionPhase, phaseProgress: inspectionPhase === 'inhale' ? 1 : 0.98 } : state;
+    let pose = getPatientAnimationFrame(demonstrationFrame, { reducedMotion: motionQuery.matches && !inspectionPhase });
+    if (!inspectionPhase && state.status === 'stopped' && previousPatientFrame && !motionQuery.matches) {
       pose = { ...previousPatientFrame, inhaleOpacity: 0, exhaleOpacity: 0 };
     }
     previousPatientFrame = pose;
+    const geometry = getPatientPoseGeometry(pose);
+    root.dataset.inspection = String(Boolean(inspectionPhase));
     elements.patient.dataset.animationPhase = state.phase;
     elements.patient.dataset.phaseProgress = state.phaseProgress.toFixed(4);
     elements.patient.dataset.expansion = pose.breathLevel.toFixed(4);
-    elements.patient.dataset.motion = motionQuery.matches ? 'reduced' : state.status === 'running' ? 'active' : state.status === 'paused' ? 'paused' : 'rest';
-    elements.chest.setAttribute('transform', `translate(206 164) scale(${pose.chestScaleX.toFixed(4)} ${pose.chestScaleY.toFixed(4)}) translate(-206 -164)`);
-    elements.abdomen.setAttribute('transform', `translate(214 215) scale(${pose.abdomenScaleX.toFixed(4)} ${pose.abdomenScaleY.toFixed(4)}) translate(-214 -215)`);
+    elements.patient.dataset.demonstrationPhase = demonstrationFrame.phase;
+    elements.patient.dataset.motion = inspectionPhase ? 'inspection' : motionQuery.matches ? 'reduced' : state.status === 'running' ? 'active' : state.status === 'paused' ? 'paused' : 'rest';
+    elements.chest.setAttribute('transform', `translate(228 189) scale(${pose.chestScaleX.toFixed(4)} ${pose.chestScaleY.toFixed(4)}) translate(-228 -189)`);
+    elements.abdomen.setAttribute('transform', `translate(0 ${(pose.breathLevel * 0.25).toFixed(4)})`);
     elements.abdomen.dataset.expansion = pose.breathLevel.toFixed(4);
-    elements.hands.setAttribute('transform', `translate(${pose.handOffsetX.toFixed(4)} ${pose.handOffsetY.toFixed(4)})`);
+    elements.bellyShape.setAttribute('d', geometry.belly);
+    elements.bellySeam.setAttribute('d', geometry.bellySeam);
+    elements.bellyFold.setAttribute('d', geometry.bellyFold);
+    elements.abdomenForearm.setAttribute('d', geometry.abdomenForearm);
+    elements.forearmHighlight.setAttribute('d', geometry.forearmHighlight);
+    elements.abdomenHand.setAttribute('transform', `translate(${pose.handOffsetX.toFixed(4)} ${pose.handOffsetY.toFixed(4)})`);
+    elements.chestForearm.setAttribute('d', geometry.chestForearm);
+    elements.chestHand.setAttribute('transform', `translate(${pose.chestHandOffsetX.toFixed(4)} ${(pose.handOffsetY * 0.15).toFixed(4)})`);
+    elements.hands.dataset.travel = pose.handOffsetX.toFixed(4);
     elements.inhaleFlow.setAttribute('transform', `translate(${(-pose.flowOffset).toFixed(4)} 0)`);
     elements.exhaleFlow.setAttribute('transform', `translate(${pose.flowOffset.toFixed(4)} 0)`);
     elements.inhaleFlow.setAttribute('opacity', pose.inhaleOpacity.toFixed(4));
     elements.exhaleFlow.setAttribute('opacity', pose.exhaleOpacity.toFixed(4));
     elements.inhaleFlow.dataset.active = String(pose.inhaleOpacity > 0);
     elements.exhaleFlow.dataset.active = String(pose.exhaleOpacity > 0);
-    if (state.status !== 'stopped') {
-      elements.mouth.setAttribute('d', state.phase === 'exhale' ? 'M233 100Q239 98 241 101Q239 104 234 102Z' : 'M228 100Q234 102 238 100');
-    }
+    elements.mouth.setAttribute('d', geometry.lips);
+    elements.mouthOpening.setAttribute('cx', String(280 + pose.lipRoundness * 7));
+    elements.mouthOpening.setAttribute('rx', String(0.7 + pose.lipRoundness));
+    elements.mouthOpening.setAttribute('ry', String(0.6 + pose.lipRoundness * 1.6));
+    elements.detailLips.setAttribute('d', geometry.detailLips);
+    elements.detailOpening.setAttribute('cx', String(124 + pose.lipRoundness * 15));
+    elements.detailOpening.setAttribute('cy', String(107 + pose.lipRoundness));
+    elements.detailOpening.setAttribute('rx', String(1 + pose.lipRoundness * 1.4));
+    elements.detailOpening.setAttribute('ry', String(0.7 + pose.lipRoundness * 4.5));
+    elements.detailInhale.setAttribute('opacity', pose.inhaleOpacity.toFixed(4));
+    elements.detailExhale.setAttribute('opacity', pose.exhaleOpacity.toFixed(4));
+    elements.detailBelly.setAttribute('d', geometry.detailBelly);
+    elements.detailBellyLine.setAttribute('d', geometry.detailBellyLine);
+    elements.detailArm.setAttribute('d', geometry.detailArm);
+    elements.detailHand.setAttribute('transform', `translate(${geometry.detailHandX.toFixed(4)} ${pose.handOffsetY.toFixed(4)})`);
+    const showingInhale = demonstrationFrame.phase === 'inhale';
+    const showingExhale = demonstrationFrame.phase === 'exhale';
+    elements.detailBellyArrow.setAttribute('d', showingExhale ? 'M236 78H192' : 'M192 78H236');
+    elements.detailBellyArrow.setAttribute('opacity', showingInhale || showingExhale ? '.85' : '0');
+    elements.bellyText.textContent = showingInhale ? '自然向外' : showingExhale ? '缓慢回落' : '自然起伏';
+    elements.lipLabel.textContent = showingExhale ? '轻轻缩唇，缓慢呼出' : '嘴唇放松，用鼻轻吸';
+    elements.bellyLabel.textContent = showingInhale ? '腹部自然起伏，手随之移动' : showingExhale ? '腹部与手一起缓慢回落' : '手轻放，不用力鼓腹';
     let step = '坐稳，肩颈放松';
-    let instruction = '双脚着地，肩颈放松。腹部动作先由医护示范并确认适合你，再开始轻柔练习。';
+    let instruction = '双脚着地，一手轻放胸部、一手轻放腹部。腹部动作先由医护确认适合你。';
     if (state.status === 'running') {
       step = state.phase === 'inhale' ? '鼻吸：轻柔吸气，肩颈放松' : '缩唇呼气：慢慢呼出';
       instruction = state.phase === 'inhale' ? '跟着鼻吸箭头轻柔吸气，不刻意深吸或用力鼓腹。' : '嘴唇轻轻收拢，随着气流缓慢呼出，不用力吹。';
@@ -417,9 +515,13 @@ export function mountGame(container, { breathing = {}, onComplete = () => {}, on
       step = '示范已停止，先休息';
       instruction = '听从自己的感受，身体不适时请按页面安全提示处理。';
     }
+    if (inspectionPhase) {
+      step = inspectionPhase === 'inhale' ? '吸气静帧：嘴唇放松，腹部自然起伏' : '呼气静帧：轻轻缩唇，腹部回落';
+      instruction = '现在只查看动作，计时没有继续。点击「跟随节奏」返回本轮示范。';
+    }
     elements.demoStep.textContent = step;
     elements.demoInstruction.textContent = instruction;
-    elements.reducedNote.textContent = motionQuery.matches ? '已减少动效；继续查看文字和气流方向提示。' : '';
+    elements.reducedNote.textContent = motionQuery.matches ? '已减少动效。可用上方静帧按钮看清吸气、呼气姿势。' : '动作幅度为演示而放大；轻柔呼吸，不用力鼓腹。';
   }
 
   function render() {
@@ -516,6 +618,18 @@ export function mountGame(container, { breathing = {}, onComplete = () => {}, on
   }
 
   function onClick(event) {
+    const poseButton = event.target.closest?.('[data-game-pose]');
+    if (poseButton && root.contains(poseButton) && !disposed) {
+      const selected = poseButton.dataset.gamePose;
+      if (selected !== 'follow') {
+        session.pause('inspection');
+        cancelSpeech();
+      }
+      inspectionPhase = selected === 'follow' ? null : selected;
+      for (const button of elements.poseButtons) button.setAttribute('aria-pressed', String(button === poseButton));
+      refresh();
+      return;
+    }
     const demoButton = event.target.closest?.('[data-game-demo]');
     if (demoButton && root.contains(demoButton) && !disposed) {
       const selected = demoButton.dataset.gameDemo;
@@ -530,6 +644,8 @@ export function mountGame(container, { breathing = {}, onComplete = () => {}, on
     if (action === 'pause') return pause();
     if (action === 'stop') {
       if (session.stop('manual')) {
+        inspectionPhase = null;
+        for (const poseButton of elements.poseButtons) poseButton.setAttribute('aria-pressed', String(poseButton.dataset.gamePose === 'follow'));
         cancelSpeech();
         elements.encouragement.textContent = '听从自己的感受，休息也是照顾自己。';
         refresh();
@@ -538,6 +654,8 @@ export function mountGame(container, { breathing = {}, onComplete = () => {}, on
       return;
     }
     const before = session.getState();
+    inspectionPhase = null;
+    for (const poseButton of elements.poseButtons) poseButton.setAttribute('aria-pressed', String(poseButton.dataset.gamePose === 'follow'));
     if (before.status === 'idle') {
       session.start();
     } else if (before.status === 'paused') {

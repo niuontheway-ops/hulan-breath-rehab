@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import {mkdir,writeFile,readFile} from 'node:fs/promises';
 import {chromium} from 'playwright';
 import {fileURLToPath} from 'node:url';
+import {createHash} from 'node:crypto';
 import {EDUCATION_TOPICS} from '../education.mjs';
 import {INHALER_DEVICES,getInhaler} from '../inhaler.mjs';
 const base=process.env.HULAN_TEST_URL||'http://127.0.0.1:4173';
@@ -60,7 +61,7 @@ try{
       await page.locator(`[data-topic=${topic.id}]`).click();
       const video=page.locator('.edu-video');
       assert.match(await video.getAttribute('src'),new RegExp(`/${topic.id}\\.mp4$`));
-      assert.match(await video.getAttribute('poster'),new RegExp(`/${topic.id}\\.svg$`));
+      assert.match(await video.getAttribute('poster'),new RegExp(`/${topic.id}\\.webp$`));
       await video.evaluate(v=>{v.textTracks[0].mode='hidden';return v.play();});
       await page.waitForFunction(()=>document.querySelector('.edu-video').currentTime>0.2);
       await page.waitForFunction(()=>document.querySelector('.edu-video track').readyState===2);
@@ -68,9 +69,17 @@ try{
       assert.equal(metric.error,null);assert.equal(metric.paused,false);assert.equal(metric.cues,4);
       assert.ok(metric.duration>30&&metric.duration<90);assert.equal(metric.width,960);assert.equal(metric.height,960);
       assert.equal(metric.muted,false);assert.ok(metric.volume>0);
+      const frameHash=async time=>{
+        await video.evaluate((v,t)=>{v.pause();v.currentTime=t;},time);
+        await page.waitForFunction(t=>{const v=document.querySelector('.edu-video');return !v.seeking&&Math.abs(v.currentTime-t)<0.1;},time);
+        const pixels=await video.evaluate(v=>{const c=document.createElement('canvas');c.width=160;c.height=160;c.getContext('2d').drawImage(v,0,0,160,160);return c.toDataURL();});
+        return createHash('sha256').update(pixels).digest('hex');
+      };
+      const firstFrame=await frameHash(1),secondFrame=await frameHash(3);
+      assert.notEqual(firstFrame,secondFrame,'Video contains changing scene frames');
       await video.evaluate(v=>{v.pause();v.currentTime=v.duration-1;});
       await page.waitForFunction(()=>{const v=document.querySelector('.edu-video');return !v.seeking&&v.currentTime>v.duration-2;});
-      videoMetrics.push({id:topic.id,...metric,seekPassed:true});
+      videoMetrics.push({id:topic.id,...metric,seekPassed:true,animationFramesDiffer:true});
       if(topic.id==='copd')await shot('copd-video-last-frame.png');
     });
   }

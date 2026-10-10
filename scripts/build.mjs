@@ -23,8 +23,9 @@ const vendor=path.join(dist,'assets','vendor');
 for(const name of ['favicon.svg','hulan-logo.jpg','rehab-garden.webp'])await cp(path.join(root,'assets',name),path.join(dist,'assets',name));
 const chapterFiles=(await readdir(path.join(root,'assets','chapters'))).filter(name=>name.endsWith('.svg')).sort();
 const videoFiles=(await readdir(path.join(root,'assets','education-videos'))).filter(name=>/\.(mp4|vtt)$/.test(name)).sort();
+const sceneFiles=(await readdir(path.join(root,'assets','education-scenes'))).filter(name=>/\.(?:webp|jpg|png)$/.test(name)).sort();
 if(chapterFiles.length!==19||videoFiles.filter(name=>name.endsWith('.mp4')).length!==12)throw new Error('章节插画或疾病宣教视频不完整。');
-for(const directory of ['chapters','education-videos'])await cp(path.join(root,'assets',directory),path.join(dist,'assets',directory),{recursive:true});
+for(const directory of ['chapters','education-videos','education-scenes'])await cp(path.join(root,'assets',directory),path.join(dist,'assets',directory),{recursive:true});
 try{await cp(path.join(root,'assets','access-qr.svg'),path.join(dist,'assets','access-qr.svg'));}catch(error){if(error.code!=='ENOENT')throw error;}
 const pdf=path.join(vendor,'pdfjs');await mkdir(pdf,{recursive:true});
 for(const name of ['pdf.mjs','pdf.worker.mjs'])await cp(path.join(modules,'pdfjs-dist','build',name),path.join(pdf,name));
@@ -43,7 +44,7 @@ for(const lang of ['chi_sim','eng']) {
   await mkdir(path.join(ocr,'lang'),{recursive:true});await cp(source,path.join(ocr,'lang',`${lang}.traineddata.gz`));
 }
 const applicationSha256={};
-for(const name of [...applicationFiles,'assets/rehab-garden.webp',...chapterFiles.map(name=>`assets/chapters/${name}`),...videoFiles.map(name=>`assets/education-videos/${name}`)])applicationSha256[name]=createHash('sha256').update(await readFile(path.join(root,name))).digest('hex');
+for(const name of [...applicationFiles,'assets/rehab-garden.webp',...chapterFiles.map(name=>`assets/chapters/${name}`),...videoFiles.map(name=>`assets/education-videos/${name}`),...sceneFiles.map(name=>`assets/education-scenes/${name}`)])applicationSha256[name]=createHash('sha256').update(await readFile(path.join(root,name))).digest('hex');
 const packageInfo=JSON.parse(await readFile(path.join(root,'package.json'),'utf8'));
 await writeFile(path.join(dist,'build-info.json'),JSON.stringify({application:'hulan-breath-rehab',version:packageInfo.version,dependencies:expected,applicationSha256,ocrModelsSha256:hashes},null,2));
 await cp(path.join(root,'THIRD_PARTY_NOTICES.md'),path.join(dist,'THIRD_PARTY_NOTICES.md'));

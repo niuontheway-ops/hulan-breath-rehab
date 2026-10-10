@@ -6,7 +6,7 @@
 
 脚本在 `education.mjs` 的 `EDUCATION_VIDEO_SCRIPTS` 中维护，每个主题有 4 段：主题介绍、两段日常行动和一段就医提示。脚本依据该模块列出的指南与患者资料编写；这是本应用制作的教育短片，不是医院、学会、指南机构的官方原作，也没有经过人工临床审核。
 
-视频文件为 `assets/education-videos/{topicId}.mp4`，字幕为同名 `.vtt`，海报为 `assets/chapters/{topicId}.svg`。使用浏览器原生播放器，`controls`、`playsinline`、`preload="none"`，不自动播放。切换疾病、离开章节或页面进入后台时暂停。患者无需上传任何数据即可观看；媒体由本站或本地包提供，播放不依赖第三方账号。
+视频文件为 `assets/education-videos/{topicId}.mp4`，字幕为同名 `.vtt`，海报为 `assets/education-scenes/{topicId}.webp`。使用浏览器原生播放器，`controls`、`playsinline`、`preload="none"`，不自动播放。切换疾病、离开章节或页面进入后台时暂停。患者无需上传任何数据即可观看；媒体由本站或本地包提供，播放不依赖第三方账号。
 
 默认页面只显示 3 条日常行动和 1 条求助提醒。其他疾病照护细节、个体化用氧与用药提醒、参考资料放在默认关闭的折叠区域。慢阻肺明确包含急性加重治疗后病情稳定、经医护评估后的肺康复。
 

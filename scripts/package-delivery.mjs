@@ -31,7 +31,7 @@ const rootFiles=['index.html','styles.css','interaction.css','patient-content.cs
 for(const name of rootFiles)await cp(path.join(root,name),path.join(source,name));
 for(const name of ['scripts','tests','docs','.github'])await cp(path.join(root,name),path.join(source,name),{recursive:true,filter:target=>!/(?:^|[\\/])(?:\.qa|\.git|node_modules|uploads|patient-data)(?:[\\/]|$)/.test(target)});
 await mkdir(path.join(source,'assets'),{recursive:true});
-for(const name of ['favicon.svg','hulan-logo.jpg','rehab-garden.webp','chapters','education-videos','ocr-lang'])await cp(path.join(root,'assets',name),path.join(source,'assets',name),{recursive:true});
+for(const name of ['favicon.svg','hulan-logo.jpg','rehab-garden.webp','chapters','education-videos','education-scenes','ocr-lang'])await cp(path.join(root,'assets',name),path.join(source,'assets',name),{recursive:true});
 try{await cp(path.join(root,'assets','access-qr.svg'),path.join(source,'assets','access-qr.svg'));}catch(error){if(error.code!=='ENOENT')throw error;}
 await cp(source,path.join(desktop,'源代码备份'),{recursive:true});
 await cp(dist,path.join(desktop,'dist'),{recursive:true});
