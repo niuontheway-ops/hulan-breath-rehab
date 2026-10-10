@@ -1,0 +1,14 @@
+node_modules/
+dist/
+.reference/
+.qa/
+.openai/
+*.tar.gz
+*.zip
+*.log
+.env
+.env.*
+!.env.example
+uploads/
+patient-data/
+coverage/
