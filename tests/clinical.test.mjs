@@ -115,10 +115,35 @@ test('MRC 1–5 is explicitly offset to mMRC 0–4 without mutating input', asyn
   assert.equal(validateProfile(profile({ dyspneaScale: 'mrc', dyspneaScore: 6 })).valid, false);
 });
 
+test('skipped professional scores can be saved but require review before training', async t => {
+  for (const missing of [null, undefined]) {
+    for (const disease of ['asthma', 'copd', 'bronchiectasis']) {
+      await t.test(`${disease}, missing = ${String(missing)}`, () => {
+        const input = profile(disease === 'asthma'
+          ? { disease, act: missing }
+          : { disease, dyspneaScale: missing, dyspneaScore: missing });
+        assert.equal(validateProfile(input).valid, true);
+        const plan = createPlan(input, now);
+        assert.equal(plan.status, 'review');
+        assertClosed(plan);
+        assert.ok(plan.reasons.some(reason => reason.includes('稍后补充') && reason.includes('联系医护')));
+        assert.ok(!plan.reasons.some(reason => reason.startsWith('ACT 不超过 19')));
+        const completed = disease === 'asthma'
+          ? { ...input, act: 22 }
+          : { ...input, dyspneaScale: 'mmrc', dyspneaScore: 1 };
+        assert.equal(createPlan(completed, now).status, 'ready');
+      });
+    }
+  }
+  assert.equal(validateProfile(profile({ dyspneaScale: null, dyspneaScore: 1 })).valid, false);
+  assert.equal(validateProfile(profile({ dyspneaScale: 'mMRC', dyspneaScore: null })).valid, false);
+  assert.equal(createPlan(profile({ disease: 'asthma', act: 22, dyspneaScale: null, dyspneaScore: null }), now).status, 'ready');
+});
+
 test('each urgent symptom takes precedence over incomplete or stale data', async t => {
   for (const field of ['chestPain', 'severeBreathlessness', 'fainting', 'hemoptysis']) {
     await t.test(field, () => {
-      const urgent = createPlan(profile({ age: 0, assessmentDate: '2026-01-01', redFlags: { ...profile().redFlags, [field]: true } }), now);
+      const urgent = createPlan(profile({ age: 0, act: null, dyspneaScore: null, assessmentDate: '2026-01-01', redFlags: { ...profile().redFlags, [field]: true } }), now);
       assert.equal(urgent.status, 'urgent');
       assertClosed(urgent);
       assert.ok(urgent.subtitle.includes('120'));
@@ -155,9 +180,9 @@ test('COPD and asthma scores are not interchangeable', () => {
   assert.equal(createPlan(profile({ act: 5 }), now).status, 'ready');
   assert.equal(createPlan(profile({ disease: 'asthma', act: 22, cat: 40 }), now).status, 'ready');
   const asthmaMissing = createPlan(profile({ disease: 'asthma', act: null }), now);
-  assert.equal(asthmaMissing.status, 'incomplete');
+  assert.equal(asthmaMissing.status, 'review');
   assertClosed(asthmaMissing);
-  assert.equal(createPlan(profile({ dyspneaScore: null }), now).status, 'incomplete');
+  assert.equal(createPlan(profile({ dyspneaScore: null }), now).status, 'review');
   assert.equal(createPlan(profile({ disease: 'asthma', act: 22, dyspneaScore: null }), now).status, 'ready');
 });
 
@@ -238,7 +263,7 @@ test('training symptoms and oxygen checks fail closed at safety boundaries', asy
 test('current training check cannot unlock a clinically withheld plan', () => {
   const freshCheck = assessTrainingReadiness(beforeTraining());
   assert.equal(freshCheck.allowed, true);
-  for (const withheld of [profile({ clinicianCleared: false }), profile({ stability: 'unknown' }), profile({ age: 17 })]) {
+  for (const withheld of [profile({ clinicianCleared: false }), profile({ stability: 'unknown' }), profile({ age: 17 }), profile({ dyspneaScore: null }), profile({ disease: 'asthma', act: null })]) {
     const plan = createPlan(withheld, now);
     assert.equal(plan.status === 'ready' && freshCheck.allowed, false);
   }

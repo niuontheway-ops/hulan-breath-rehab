@@ -4,6 +4,7 @@ import {mountGame} from './game.mjs';
 import {mountDailyAssessment,validateDailyRecords,upsertDailyRecord,evaluateDailyRecord} from './daily.mjs';
 import {mountEducation} from './education.mjs';
 import {createMusicPlayer,mountMusic} from './music.mjs';
+import {mountAssessmentWizard,mountSeniorMode} from './assessment.mjs';
 
 const $ = selector => document.querySelector(selector);
 const $$ = selector => [...document.querySelectorAll(selector)];
@@ -43,6 +44,7 @@ let dailyViewDay = null;
 let dailyTopic = null;
 let educationView = null;
 let educationTopic = 'copd';
+let assessmentWizard = null;
 const musicPlayer = createMusicPlayer();
 mountMusic($('#music-container'),{player:musicPlayer});
 musicPlayer.subscribe(s=>{
@@ -127,7 +129,7 @@ function renderHome() {
   $('#export-plan').hidden = !plan;
   if(!state.profile) {
     $('#hero-title').innerHTML = '了解你，<br>才能更好地陪伴你。';
-    $('#hero-description').innerHTML = '带上肺功能报告和症状评分，<br>一起找到适合你的训练起点。';
+    $('#hero-description').innerHTML = '从年龄和疾病开始，一步一步填写。<br>专业评分不会填，可以暂时跳过。';
     $('#hero-action').innerHTML = '开始健康评估 <span>↗</span>'; $('#hero-action').href='#assessment';
     $('#profile-summary').innerHTML = `<div class="profile-status"><i></i>尚未评估</div><div class="profile-placeholder"><strong>从一份健康评估开始</strong><p>了解疾病、肺功能与症状，<br>让建议更贴近你的日常。</p></div><div class="profile-metrics"><div class="profile-metric"><span>FEV₁ / 预计值</span>${metric(null)}</div><div class="profile-metric"><span>呼吸困难评分</span>${metric(null)}</div><div class="profile-metric"><span>血氧饱和度</span>${metric(null)}</div><div class="profile-metric"><span>当前疾病</span><strong style="font-size:14px">待录入</strong></div></div>`;
   } else {
@@ -171,7 +173,7 @@ function renderWeek() {
 function updateDiseaseFields() {
   const disease=$('input[name="disease"]:checked')?.value;
   $('#act-field').hidden=disease!=='asthma'; $('#cat-field').hidden=disease!=='copd';
-  $('#dyspnea-required').hidden=disease==='asthma'||disease==='other';
+  assessmentWizard?.refresh();
 }
 function updateScale(keepValue=false) {
   const select=$('#dyspneaScore'); const previous=select.value;const mrc=$('#dyspneaScale').value==='mrc';
@@ -179,7 +181,7 @@ function updateScale(keepValue=false) {
   if(keepValue)select.value=previous;
 }
 function fillForm(profile=state.profile) {
-  if(!profile) {$('#assessmentDate').value=localDay();return;}
+  if(!profile) {$('#assessmentDate').value=localDay();$('#assessment-urgent').hidden=true;assessmentWizard?.reset();return;}
   const form=$('#assessment-form');
   Object.entries(profile).forEach(([key,value])=>{
     if(key==='redFlags') {Object.entries(value).forEach(([flag,on])=>{if(form.elements[flag])form.elements[flag].checked=on;});return;}
@@ -188,6 +190,10 @@ function fillForm(profile=state.profile) {
     if(el.type==='checkbox')el.checked=!!value;else el.value=value??'';
   });
   updateScale();$('#dyspneaScore').value=profile.dyspneaScore??'';updateDiseaseFields();$('#valuesVerified').checked=false;
+  form.noRedFlags.checked=!Object.values(profile.redFlags||{}).some(Boolean);
+  form.querySelector(`[name="clinicalPermission"][value="${profile.clinicianCleared?'yes':'no'}"]`).checked=true;
+  $('#assessment-urgent').hidden=form.noRedFlags.checked;
+  assessmentWizard?.reset();
 }
 function profileFromForm() {
   const form=$('#assessment-form');const num=key=>form.elements[key].value.trim()===''?null:Number(form.elements[key].value);
@@ -196,7 +202,9 @@ function profileFromForm() {
 }
 function clearErrors() {$$('[aria-invalid="true"]').forEach(e=>e.removeAttribute('aria-invalid'));$$('.field-error').forEach(e=>e.remove());$('#form-errors').hidden=true;}
 $('#assessment-form').addEventListener('submit',event=>{
-  event.preventDefault();clearErrors();const profile=profileFromForm();const plan=createPlan(profile,new Date());
+  event.preventDefault();const profile=profileFromForm();const plan=createPlan(profile,new Date());
+  if(!assessmentWizard.isFinal()&&plan.status!=='urgent'){assessmentWizard.advance();return;}
+  clearErrors();
   if(plan.status==='urgent') {state.profile=profile;state.plan=plan;state.assessmentDirty=false;saveState();location.hash='home';renderHome();toast('请立即停止训练并寻求医疗帮助。');return;}
   const validation=validateProfile(profile);const errors=[...validation.errors];
   if(!$('#valuesVerified').checked)errors.push({field:'valuesVerified',message:'请先核对数值、量表类型和日期，然后勾选确认。'});
@@ -205,7 +213,7 @@ $('#assessment-form').addEventListener('submit',event=>{
   if(errors.length) {
     $('#form-errors').innerHTML=`<strong>还有这些信息需要核对</strong><ul>${errors.map(e=>`<li>${escape(e.message)}</li>`).join('')}</ul>`;$('#form-errors').hidden=false;
     errors.forEach(({field,message})=>{const el=document.getElementById(field);if(el){el.setAttribute('aria-invalid','true');if(el.closest('.field')){const label=document.createElement('span');label.className='field-error';label.textContent=message;el.parentElement.append(label);}}});
-    $('#form-errors').scrollIntoView({behavior:'smooth',block:'center'});return;
+    assessmentWizard.focusField(errors[0].field);$('#form-errors').scrollIntoView({behavior:'instant',block:'center'});return;
   }
   state.profile=profile;state.assessmentDirty=false;const activePlan=makePlan();saveState();location.hash='home';renderHome();toast(activePlan.status==='ready'?'已生成起步建议，请与医护确认后练习。':'已生成评估提示，请先联系医护复核。');
 });
@@ -224,7 +232,7 @@ function showCandidates(result) {
     if(byField.has('dyspneaScore')&&!byField.has('dyspneaScale')){toast('请同时核对 MRC / mMRC 量表类型，再填入评分。');return;}
     if(byField.has('dyspneaScale')){$('#dyspneaScale').value=byField.get('dyspneaScale');updateScale();}
     for(const [field,value] of byField){const el=document.getElementById(field);if(el)el.value=value;}
-    $('#valuesVerified').checked=false;state.assessmentDirty=true;toast(`已填入 ${byField.size} 项核对结果，请补全当前症状与日期。`);
+    $('#valuesVerified').checked=false;state.assessmentDirty=true;assessmentWizard.review();toast(`已填入 ${byField.size} 项核对结果，请补全当前症状与日期。`);
   });
 }
 async function importFile(file) {
@@ -330,12 +338,14 @@ function navigate() {
   $('#page-title').textContent=pageTitles[page];document.title=`壶兰呼吸 · ${pageTitles[page]}`;
   if(page==='home')renderHome();if(page==='garden')renderGarden();if(page==='history')renderHistory();
   if(page==='daily')renderDaily();
+  if(page==='assessment')assessmentWizard.refresh();
   if(page==='education')renderEducation();else{educationView?.dispose();educationView=null;}
   $('#demo-banner').hidden=!state.isDemo;
   window.scrollTo({top:0,behavior:'instant'});
 }
 window.addEventListener('hashchange',navigate);
 window.addEventListener('pagehide',()=>{stopGame();musicPlayer.pause();disposeReportWorker();});
-fillIcons();readStorage();fillForm();updateDiseaseFields();$('#assessmentDate').max=localDay();
+assessmentWizard=mountAssessmentWizard({getProfile:profileFromForm,validateProfile,onSkip:()=>{$('#valuesVerified').checked=false;state.assessmentDirty=true;},beforeAdvance:step=>step==='report'&&importInProgress?'正在识别报告，请等候处理完成，或先点“取消识别”。':null});
+mountSeniorMode();fillIcons();readStorage();fillForm();updateDiseaseFields();$('#assessmentDate').max=localDay();
 $('#today-date').textContent=new Intl.DateTimeFormat('zh-CN',{timeZone:'Asia/Shanghai',month:'long',day:'numeric',weekday:'long'}).format(new Date());
 renderHome();navigate();

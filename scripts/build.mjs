@@ -17,9 +17,11 @@ for(const [name,version] of Object.entries(expected)) {
 if(path.dirname(dist)!==path.resolve(root))throw new Error('Invalid build directory');
 await rm(dist,{recursive:true,force:true});
 await mkdir(dist,{recursive:true});
-for(const name of ['index.html','styles.css','app.mjs','clinical.mjs','reports.mjs','game.mjs','daily.mjs','education.mjs','music.mjs'])await cp(path.join(root,name),path.join(dist,name));
+const applicationFiles=['index.html','styles.css','app.mjs','assessment.mjs','clinical.mjs','reports.mjs','game.mjs','daily.mjs','education.mjs','music.mjs'];
+for(const name of applicationFiles)await cp(path.join(root,name),path.join(dist,name));
 const vendor=path.join(dist,'assets','vendor');
 for(const name of ['favicon.svg','hulan-logo.jpg'])await cp(path.join(root,'assets',name),path.join(dist,'assets',name));
+try{await cp(path.join(root,'assets','access-qr.svg'),path.join(dist,'assets','access-qr.svg'));}catch(error){if(error.code!=='ENOENT')throw error;}
 const pdf=path.join(vendor,'pdfjs');await mkdir(pdf,{recursive:true});
 for(const name of ['pdf.mjs','pdf.worker.mjs'])await cp(path.join(modules,'pdfjs-dist','build',name),path.join(pdf,name));
 for(const name of ['cmaps','standard_fonts','wasm'])await cp(path.join(modules,'pdfjs-dist',name),path.join(pdf,name),{recursive:true});
@@ -36,5 +38,10 @@ for(const lang of ['chi_sim','eng']) {
   const data=await readFile(source);hashes[lang]=createHash('sha256').update(data).digest('hex');
   await mkdir(path.join(ocr,'lang'),{recursive:true});await cp(source,path.join(ocr,'lang',`${lang}.traineddata.gz`));
 }
-await writeFile(path.join(dist,'build-info.json'),JSON.stringify({application:'hulan-breath-rehab',version:'1.0.0',dependencies:expected,ocrModelsSha256:hashes},null,2));
+const applicationSha256={};
+for(const name of applicationFiles)applicationSha256[name]=createHash('sha256').update(await readFile(path.join(root,name))).digest('hex');
+const packageInfo=JSON.parse(await readFile(path.join(root,'package.json'),'utf8'));
+await writeFile(path.join(dist,'build-info.json'),JSON.stringify({application:'hulan-breath-rehab',version:packageInfo.version,dependencies:expected,applicationSha256,ocrModelsSha256:hashes},null,2));
+await cp(path.join(root,'THIRD_PARTY_NOTICES.md'),path.join(dist,'THIRD_PARTY_NOTICES.md'));
+await writeFile(path.join(dist,'.nojekyll'),'');
 console.log('已构建 dist：应用、PDF 解析、中英文 OCR 模型均为本机资源。');

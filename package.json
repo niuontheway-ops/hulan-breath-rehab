@@ -1,6 +1,6 @@
 {
   "name": "hulan-breath-rehab",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "private": true,
   "type": "module",
   "description": "慢性气道疾病患者的本机健康评估与互动呼吸康复助手",
@@ -10,7 +10,7 @@
     "start": "node scripts/serve.mjs",
     "test": "node --test tests/*.test.mjs",
     "check": "node scripts/check.mjs",
-    "test:browser": "node scripts/browser-check.mjs && node scripts/browser-restore-check.mjs"
+    "test:browser": "node scripts/browser-check.mjs && node scripts/browser-restore-check.mjs && node scripts/browser-wizard-check.mjs"
   },
   "dependencies": {
     "pdfjs-dist": "5.6.205",

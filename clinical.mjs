@@ -1,6 +1,6 @@
 // Local educational rules. Thresholds and starter durations are product safeguards,
 // not a diagnostic algorithm or a clinically validated exercise prescription.
-const RULE_VERSION = '2026-10-10.1';
+const RULE_VERSION = '2026-10-10.2';
 const DAY_MS = 86400000;
 const DISEASES = { copd: '慢阻肺', asthma: '哮喘', bronchiectasis: '支气管扩张', other: '其他气道疾病' };
 const SOURCES = [
@@ -47,17 +47,15 @@ export function validateProfile(profile) {
     const outside = integer ? value < min || value > max : value <= min || value > max;
     if (!finite(value) || outside || (integer && !Number.isInteger(value))) add(field, message);
   }
-  if (!['mmrc', 'mrc'].includes(profile.dyspneaScale)) add('dyspneaScale', '请区分 mMRC（0–4）与 MRC（1–5）。');
+  if ((profile.dyspneaScale != null || profile.dyspneaScore != null) && !['mmrc', 'mrc'].includes(profile.dyspneaScale)) {
+    add('dyspneaScale', '请区分 mMRC（0–4）与 MRC（1–5）。');
+  }
   if (profile.dyspneaScore != null) {
     const min = profile.dyspneaScale === 'mrc' ? 1 : 0;
     if (!finite(profile.dyspneaScore) || !Number.isInteger(profile.dyspneaScore)
       || profile.dyspneaScore < min || profile.dyspneaScore > min + 4) {
       add('dyspneaScore', profile.dyspneaScale === 'mrc' ? 'MRC 总分须为 1–5 的整数。' : 'mMRC 总分须为 0–4 的整数。');
     }
-  }
-  if (profile.disease === 'asthma' && profile.act == null) add('act', '哮喘评估需填写既有 ACT 总分。');
-  if (['copd', 'bronchiectasis'].includes(profile.disease) && profile.dyspneaScore == null) {
-    add('dyspneaScore', '请填写已完成的呼吸困难评分。');
   }
   if (!['stable', 'worse', 'unknown'].includes(profile.stability)) add('stability', '请选择近期症状是否稳定。');
   if (typeof profile.clinicianCleared !== 'boolean') add('clinicianCleared', '请确认医护是否评估并允许目前的轻量居家训练。');
@@ -86,7 +84,7 @@ function metrics(profile) {
     { label: 'FEV₁ / 预计值', value: percent(profile.fev1Percent), detail: '肺功能资料；不单独判断病种或训练强度' },
     { label: 'FEV₁ / FVC', value: percent(profile.fev1Fvc), detail: '百分数；诊断需医护结合完整肺功能报告' },
     { label: '静息 SpO₂', value: percent(profile.spo2), detail: '单次自报读数；不能代替运动中的监测' },
-    { label: '呼吸困难', value: mmrc == null ? '未提供' : `mMRC ${mmrc}`, detail: profile.dyspneaScale === 'mrc' ? `MRC ${profile.dyspneaScore} → mMRC ${mmrc}（减 1）` : 'mMRC：0–4；分数越高，日常活动受限越多' },
+    { label: '呼吸困难', value: mmrc == null ? '未提供' : `mMRC ${mmrc}`, detail: mmrc != null && profile.dyspneaScale === 'mrc' ? `MRC ${profile.dyspneaScore} → mMRC ${mmrc}（减 1）` : 'mMRC：0–4；分数越高，日常活动受限越多' },
     { label: 'ACT 总分', value: score(profile.act), detail: '5–25；仅哮喘分流使用，需结合当前症状' },
     { label: 'CAT 总分', value: score(profile.cat), detail: '0–40；仅慢阻肺症状负担参考，不能诊断' },
   ];
@@ -132,9 +130,13 @@ export function createPlan(profile, now = new Date()) {
   if (input.age < 18) review.push('此功能面向成人；未满 18 岁需由专门团队制定训练安排。');
   if (input.stability !== 'stable') review.push(input.stability === 'worse' ? '近期症状加重，请先联系医护评估。' : '尚未确认近期症状稳定，需先联系医护。');
   if (!input.clinicianCleared) review.push('尚未确认医护已评估并允许目前的轻量居家训练。');
+  if (input.disease === 'asthma' && input.act == null) review.push('未提供 ACT 总分；可稍后补充既有评分，或联系医护评估后再开始训练。');
+  if (['copd', 'bronchiectasis'].includes(input.disease) && input.dyspneaScore == null) {
+    review.push('未提供 MRC / mMRC 呼吸困难评分；可稍后补充既有评分，或联系医护评估后再开始训练。');
+  }
   if (finite(input.spo2) && input.spo2 <= 92) review.push('静息血氧不超过 92%，请停止自主训练并尽快联系医护核实；不自行调氧。');
   if (mmrc >= 3) review.push('呼吸困难评分提示明显活动受限，需医护评估并安排有监督的康复。');
-  if (input.disease === 'asthma' && input.act <= 19) review.push('ACT 不超过 19，提示哮喘控制可能不足；先复核当前症状和行动计划。');
+  if (input.disease === 'asthma' && finite(input.act) && input.act <= 19) review.push('ACT 不超过 19，提示哮喘控制可能不足；先复核当前症状和行动计划。');
   if (finite(input.fev1Percent) && input.fev1Percent < 30) review.push('FEV₁ 预计值百分比较低，本页面需先由医护核实肺功能与适合的训练方式。');
   if (input.disease === 'copd' && finite(input.cat) && input.cat >= 30) review.push('CAT 症状总分较高，先由医护评估日常活动能力和康复支持需求。');
   if (ageDays > 30) review.push('评估资料超过 30 天，请更新症状与医护允许的训练安排。');
