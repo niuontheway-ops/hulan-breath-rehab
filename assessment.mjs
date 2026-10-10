@@ -20,6 +20,7 @@ export function mountAssessmentWizard({getProfile,validateProfile,onSkip,beforeA
     const active=steps();let index=active.findIndex(s=>s.dataset.step===id);if(index<0)index=0;
     current=active[index].dataset.step;
     all.forEach(step=>{step.hidden=step!==active[index];});
+    if(focus)active[index].dispatchEvent(new CustomEvent('rehab:step',{bubbles:true}));
     document.querySelector('#wizard-progress-label').textContent=`第 ${index+1} 步，共 ${active.length} 步`;
     document.querySelector('#wizard-progress-fill').style.width=`${(index+1)/active.length*100}%`;
     document.querySelector('#wizard-progress-bar').setAttribute('aria-valuenow',String(index+1));

@@ -17,10 +17,10 @@ for(const [name,version] of Object.entries(expected)) {
 if(path.dirname(dist)!==path.resolve(root))throw new Error('Invalid build directory');
 await rm(dist,{recursive:true,force:true});
 await mkdir(dist,{recursive:true});
-const applicationFiles=['index.html','styles.css','app.mjs','assessment.mjs','clinical.mjs','reports.mjs','game.mjs','daily.mjs','education.mjs','music.mjs'];
+const applicationFiles=['index.html','styles.css','interaction.css','app.mjs','assessment.mjs','ui-motion.mjs','clinical.mjs','reports.mjs','game.mjs','daily.mjs','education.mjs','music.mjs'];
 for(const name of applicationFiles)await cp(path.join(root,name),path.join(dist,name));
 const vendor=path.join(dist,'assets','vendor');
-for(const name of ['favicon.svg','hulan-logo.jpg'])await cp(path.join(root,'assets',name),path.join(dist,'assets',name));
+for(const name of ['favicon.svg','hulan-logo.jpg','rehab-garden.webp'])await cp(path.join(root,'assets',name),path.join(dist,'assets',name));
 try{await cp(path.join(root,'assets','access-qr.svg'),path.join(dist,'assets','access-qr.svg'));}catch(error){if(error.code!=='ENOENT')throw error;}
 const pdf=path.join(vendor,'pdfjs');await mkdir(pdf,{recursive:true});
 for(const name of ['pdf.mjs','pdf.worker.mjs'])await cp(path.join(modules,'pdfjs-dist','build',name),path.join(pdf,name));
@@ -39,7 +39,7 @@ for(const lang of ['chi_sim','eng']) {
   await mkdir(path.join(ocr,'lang'),{recursive:true});await cp(source,path.join(ocr,'lang',`${lang}.traineddata.gz`));
 }
 const applicationSha256={};
-for(const name of applicationFiles)applicationSha256[name]=createHash('sha256').update(await readFile(path.join(root,name))).digest('hex');
+for(const name of [...applicationFiles,'assets/rehab-garden.webp'])applicationSha256[name]=createHash('sha256').update(await readFile(path.join(root,name))).digest('hex');
 const packageInfo=JSON.parse(await readFile(path.join(root,'package.json'),'utf8'));
 await writeFile(path.join(dist,'build-info.json'),JSON.stringify({application:'hulan-breath-rehab',version:packageInfo.version,dependencies:expected,applicationSha256,ocrModelsSha256:hashes},null,2));
 await cp(path.join(root,'THIRD_PARTY_NOTICES.md'),path.join(dist,'THIRD_PARTY_NOTICES.md'));

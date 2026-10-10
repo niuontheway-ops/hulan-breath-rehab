@@ -27,11 +27,11 @@ for(const target of [desktop,web,source]) {
   if(path.dirname(path.resolve(target))!==path.resolve(delivery))throw new Error('无效的交付目录。');
   await rm(target,{recursive:true,force:true});await mkdir(target,{recursive:true});
 }
-const rootFiles=['index.html','styles.css','app.mjs','assessment.mjs','clinical.mjs','reports.mjs','game.mjs','daily.mjs','education.mjs','music.mjs','package.json','pnpm-lock.yaml','README.md','THIRD_PARTY_NOTICES.md','.gitignore','打开壶兰呼吸.cmd','安装桌面快捷方式.cmd','停止壶兰呼吸.cmd'];
+const rootFiles=['index.html','styles.css','interaction.css','app.mjs','assessment.mjs','ui-motion.mjs','clinical.mjs','reports.mjs','game.mjs','daily.mjs','education.mjs','music.mjs','package.json','pnpm-lock.yaml','README.md','THIRD_PARTY_NOTICES.md','.gitignore','打开壶兰呼吸.cmd','安装桌面快捷方式.cmd','停止壶兰呼吸.cmd'];
 for(const name of rootFiles)await cp(path.join(root,name),path.join(source,name));
 for(const name of ['scripts','tests','docs','.github'])await cp(path.join(root,name),path.join(source,name),{recursive:true,filter:target=>!/(?:^|[\\/])(?:\.qa|\.git|node_modules|uploads|patient-data)(?:[\\/]|$)/.test(target)});
 await mkdir(path.join(source,'assets'),{recursive:true});
-for(const name of ['favicon.svg','hulan-logo.jpg','ocr-lang'])await cp(path.join(root,'assets',name),path.join(source,'assets',name),{recursive:true});
+for(const name of ['favicon.svg','hulan-logo.jpg','rehab-garden.webp','ocr-lang'])await cp(path.join(root,'assets',name),path.join(source,'assets',name),{recursive:true});
 try{await cp(path.join(root,'assets','access-qr.svg'),path.join(source,'assets','access-qr.svg'));}catch(error){if(error.code!=='ENOENT')throw error;}
 await cp(source,path.join(desktop,'源代码备份'),{recursive:true});
 await cp(dist,path.join(desktop,'dist'),{recursive:true});

@@ -5,6 +5,7 @@ import {mountDailyAssessment,validateDailyRecords,upsertDailyRecord,evaluateDail
 import {mountEducation} from './education.mjs';
 import {createMusicPlayer,mountMusic} from './music.mjs';
 import {mountAssessmentWizard,mountSeniorMode} from './assessment.mjs';
+import {mountUIMotion} from './ui-motion.mjs';
 
 const $ = selector => document.querySelector(selector);
 const $$ = selector => [...document.querySelectorAll(selector)];
@@ -345,6 +346,7 @@ function navigate() {
 }
 window.addEventListener('hashchange',navigate);
 window.addEventListener('pagehide',()=>{stopGame();musicPlayer.pause();disposeReportWorker();});
+mountUIMotion();
 assessmentWizard=mountAssessmentWizard({getProfile:profileFromForm,validateProfile,onSkip:()=>{$('#valuesVerified').checked=false;state.assessmentDirty=true;},beforeAdvance:step=>step==='report'&&importInProgress?'正在识别报告，请等候处理完成，或先点“取消识别”。':null});
 mountSeniorMode();fillIcons();readStorage();fillForm();updateDiseaseFields();$('#assessmentDate').max=localDay();
 $('#today-date').textContent=new Intl.DateTimeFormat('zh-CN',{timeZone:'Asia/Shanghai',month:'long',day:'numeric',weekday:'long'}).format(new Date());
