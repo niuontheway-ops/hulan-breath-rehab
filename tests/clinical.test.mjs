@@ -44,6 +44,36 @@ test('adult stable COPD: complete contract and serializable education plan', () 
   assert.deepEqual(JSON.parse(JSON.stringify(plan)), plan);
 });
 
+test('COPD stabilized after an exacerbation can receive a cleared conservative plan', () => {
+  const input = profile({ stability: 'recovering', dyspneaScore: 0, cat: 5 });
+  assert.equal(validateProfile(input).valid, true);
+  const plan = createPlan(input, now);
+  assert.equal(plan.status, 'ready');
+  assert.ok(plan.reasons.some(reason => reason.includes('急性加重后已稳定')));
+  assert.ok(plan.sessions.find(session => session.kind === 'education').instruction.includes('病情稳定'));
+  assert.ok(walkingMinutes(input) < walkingMinutes({ ...input, stability: 'stable' }));
+  assert.equal(input.stability, 'recovering');
+});
+
+test('reported recovery cannot override current red flags or other safety requirements', async t => {
+  for (const field of ['chestPain', 'severeBreathlessness', 'fainting', 'hemoptysis']) {
+    await t.test(field, () => {
+      const plan = createPlan(profile({ stability: 'recovering', redFlags: { ...profile().redFlags, [field]: true } }), now);
+      assert.equal(plan.status, 'urgent');
+      assertClosed(plan);
+    });
+  }
+  for (const scenario of [{ clinicianCleared: false }, { spo2: 92 }, { dyspneaScore: 3 }, { dyspneaScore: null }, { assessmentDate: '2026-09-09' }]) {
+    const plan = createPlan(profile({ stability: 'recovering', ...scenario }), now);
+    assert.equal(plan.status, 'review');
+    assertClosed(plan);
+  }
+  for (const stability of ['worse', 'unknown']) assertClosed(createPlan(profile({ stability }), now));
+  const plan = createPlan(profile({ stability: 'recovering' }), now);
+  assert.equal(plan.status, 'ready');
+  assert.equal(plan.status === 'ready' && assessTrainingReadiness(beforeTraining({ worseSymptoms: true })).allowed, false);
+});
+
 test('empty, non-object and incomplete inputs never permit training', async t => {
   for (const value of [null, undefined, [], 'profile', {}, 1]) {
     await t.test(String(value), () => {

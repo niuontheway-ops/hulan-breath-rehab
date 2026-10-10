@@ -3,6 +3,7 @@ import {readReport, parseReportText, disposeReportWorker} from './reports.mjs';
 import {mountGame} from './game.mjs';
 import {mountDailyAssessment,validateDailyRecords,upsertDailyRecord,evaluateDailyRecord} from './daily.mjs';
 import {mountEducation} from './education.mjs';
+import {mountInhaler} from './inhaler.mjs';
 import {createMusicPlayer,mountMusic} from './music.mjs';
 import {mountAssessmentWizard,mountSeniorMode} from './assessment.mjs';
 import {mountUIMotion} from './ui-motion.mjs';
@@ -44,6 +45,7 @@ let dailyView = null;
 let dailyViewDay = null;
 let dailyTopic = null;
 let educationView = null;
+let inhalerView = null;
 let educationTopic = 'copd';
 let assessmentWizard = null;
 const musicPlayer = createMusicPlayer();
@@ -129,10 +131,10 @@ function renderHome() {
   $('#demo-banner').hidden = !state.isDemo;
   $('#export-plan').hidden = !plan;
   if(!state.profile) {
-    $('#hero-title').innerHTML = '了解你，<br>才能更好地陪伴你。';
-    $('#hero-description').innerHTML = '从年龄和疾病开始，一步一步填写。<br>专业评分不会填，可以暂时跳过。';
+    $('#hero-title').innerHTML = '先了解身体，<br>再开始练习。';
+    $('#hero-description').innerHTML = '从年龄、疾病开始。<br>专业资料可以跳过。';
     $('#hero-action').innerHTML = '开始健康评估 <span>↗</span>'; $('#hero-action').href='#assessment';
-    $('#profile-summary').innerHTML = `<div class="profile-status"><i></i>尚未评估</div><div class="profile-placeholder"><strong>从一份健康评估开始</strong><p>了解疾病、肺功能与症状，<br>让建议更贴近你的日常。</p></div><div class="profile-metrics"><div class="profile-metric"><span>FEV₁ / 预计值</span>${metric(null)}</div><div class="profile-metric"><span>呼吸困难评分</span>${metric(null)}</div><div class="profile-metric"><span>血氧饱和度</span>${metric(null)}</div><div class="profile-metric"><span>当前疾病</span><strong style="font-size:14px">待录入</strong></div></div>`;
+    $('#profile-summary').innerHTML = `<div class="profile-status"><i></i>尚未评估</div><div class="profile-placeholder"><strong>先做健康评估</strong><p>从年龄和疾病开始。</p></div><div class="profile-metrics"><div class="profile-metric"><span>FEV₁ / 预计值</span>${metric(null)}</div><div class="profile-metric"><span>呼吸困难评分</span>${metric(null)}</div><div class="profile-metric"><span>血氧饱和度</span>${metric(null)}</div><div class="profile-metric"><span>当前疾病</span><strong style="font-size:14px">待录入</strong></div></div>`;
   } else {
     const p=state.profile;
     $('#hero-title').textContent=plan.status==='ready' ? '今天，也按自己的节奏来。' : plan.title;
@@ -146,7 +148,7 @@ function renderHome() {
     notice.className=`notice ${plan.status==='urgent'?'notice-danger':plan.status==='ready'?'notice-ready':''}`;
     notice.innerHTML=`<h3>${escape(plan.title)}</h3><p>${escape(plan.subtitle)}</p>${plan.status==='ready'?'':`<ul>${plan.reasons.map(r=>`<li>${escape(r)}</li>`).join('')}</ul>`}`;
   }
-  $('#plan-summary').textContent = plan?.status==='ready' ? '先与医护确认这些起步建议；可以分段完成，也可以休息。' : '完成合适的安全评估后，这里会出现你的训练建议。';
+  $('#plan-summary').textContent = plan?.status==='ready' ? '医护确认后，分段练习。' : '评估后查看训练建议。';
   const sessions=$('#plan-sessions');
   if(plan?.status==='ready') {
     const types={breathing:{icon:'wind',tag:'呼吸节奏'},walking:{icon:'walk',tag:'日常活动'},strength:{icon:'activity',tag:'舒缓活动'},education:{icon:'book',tag:'健康教育'}};
@@ -271,10 +273,10 @@ function renderGarden() {
   const daily=getDailyGate();
   if(daily){gate.innerHTML=`<article class="card gate-card"><span class="icon-chip">${icon('shield')}</span><h2>${escape(daily.title)}</h2><div class="notice ${daily.status==='urgent'?'notice-danger':''}"><p>${escape(daily.message)}</p><ul>${daily.reasons.map(r=>`<li>${escape(r)}</li>`).join('')}</ul></div><div class="gate-actions"><a class="btn-primary" href="#daily">查看今日评估 →</a><a class="btn-secondary" href="#assessment">更新健康画像</a></div></article>`;return;}
   if(!plan||plan.status!=='ready') {
-    gate.innerHTML=`<article class="card gate-card"><span class="icon-chip">${icon('shield')}</span><h2>${escape(plan?.title || '花园已经准备好，先了解你的状态')}</h2><p>${escape(plan?.subtitle || '完成健康评估、确认适合居家练习后，就能让小芽随一呼一吸慢慢生长。')}</p>${plan?`<div class="notice ${plan.status==='urgent'?'notice-danger':''}"><ul>${plan.reasons.map(r=>`<li>${escape(r)}</li>`).join('')}</ul></div>`:''}<div class="gate-actions"><a class="btn-primary" href="#assessment">${plan?'更新健康评估':'开始健康评估'} →</a><button class="btn-secondary" id="garden-demo">体验模拟示例</button></div></article>`;
+    gate.innerHTML=`<article class="card gate-card"><span class="icon-chip">${icon('shield')}</span><h2>${escape(plan?.title || '先评估，再训练')}</h2><p>${escape(plan?.subtitle || '先评估身体状态，再开始练习。')}</p>${plan?`<div class="notice ${plan.status==='urgent'?'notice-danger':''}"><ul>${plan.reasons.map(r=>`<li>${escape(r)}</li>`).join('')}</ul></div>`:''}<div class="gate-actions"><a class="btn-primary" href="#assessment">${plan?'更新健康评估':'开始健康评估'} →</a><button class="btn-secondary" id="garden-demo">体验模拟示例</button></div></article>`;
     $('#garden-demo').addEventListener('click',()=>enterDemo('garden'));return;
   }
-  gate.innerHTML=`<article class="card gate-card"><span class="icon-chip">${icon('shield')}</span><h2>开始前，再问问身体的感受</h2><p>本次是 ${plan.breathing.cycles} 轮轻柔呼吸；每轮约 6 秒，轮间按需要休息。游戏记录你的自主确认，不检测真实呼吸。</p><form id="readiness-form"><label class="check-row"><input type="checkbox" name="noChestPain" required>现在没有胸痛或胸部明显不适</label><label class="check-row"><input type="checkbox" name="noSevereBreathlessness" required>现在没有严重气促或说话困难</label><label class="check-row"><input type="checkbox" name="noDizziness" required>现在没有头晕、晕厥或意识不清</label><label class="check-row"><input type="checkbox" name="noWorse" required>今天症状没有加重，也没有咯血</label><label class="check-row"><input type="checkbox" name="clinicianCleared" required>这项居家练习已获医护允许，我愿意开始</label><div class="field"><label for="training-spo2">此刻静息 SpO₂（可选）</label><input type="number" id="training-spo2" min="1" max="100" step="1" inputmode="numeric" placeholder="没有新测量可留空"><small>现有评估值：${state.profile.spo2==null?'未提供':`${escape(state.profile.spo2)}%`}。不要自行调整吸氧流量。</small></div><div id="readiness-notice" class="notice" role="alert" hidden></div><div class="gate-actions"><button class="btn-primary" type="submit">准备好了，进入花园 →</button><a class="btn-secondary" href="#assessment">今天不适，更新评估</a></div></form></article>`;
+  gate.innerHTML=`<article class="card gate-card"><span class="icon-chip">${icon('shield')}</span><h2>开始前，再问问身体的感受</h2><p>本次 ${plan.breathing.cycles} 轮，每轮约 6 秒，可随时休息。记录来自你的确认，不检测真实呼吸。</p><form id="readiness-form"><label class="check-row"><input type="checkbox" name="noChestPain" required>现在没有胸痛或胸部明显不适</label><label class="check-row"><input type="checkbox" name="noSevereBreathlessness" required>现在没有严重气促或说话困难</label><label class="check-row"><input type="checkbox" name="noDizziness" required>现在没有头晕、晕厥或意识不清</label><label class="check-row"><input type="checkbox" name="noWorse" required>今天症状没有加重，也没有咯血</label><label class="check-row"><input type="checkbox" name="clinicianCleared" required>这项居家练习已获医护允许，我愿意开始</label><div class="field"><label for="training-spo2">此刻静息 SpO₂（可选）</label><input type="number" id="training-spo2" min="1" max="100" step="1" inputmode="numeric" placeholder="没有新测量可留空"><small>现有评估值：${state.profile.spo2==null?'未提供':`${escape(state.profile.spo2)}%`}。不要自行调整吸氧流量。</small></div><div id="readiness-notice" class="notice" role="alert" hidden></div><div class="gate-actions"><button class="btn-primary" type="submit">准备好了，进入花园 →</button><a class="btn-secondary" href="#assessment">今天不适，更新评估</a></div></form></article>`;
   $('#readiness-form').addEventListener('submit',event=>{
     event.preventDefault();const form=event.target;const oxygen=$('#training-spo2').value;const check={chestPain:!form.noChestPain.checked,severeBreathlessness:!form.noSevereBreathlessness.checked,dizziness:!form.noDizziness.checked,worseSymptoms:!form.noWorse.checked,clinicianCleared:form.clinicianCleared.checked,spo2:oxygen===''?state.profile.spo2:Number(oxygen)};
     const result=assessTrainingReadiness(check);const currentPlan=makePlan();
@@ -293,9 +295,9 @@ function completeTraining(raw) {
 function renderHistory() {
   const records=state.records;const totalMs=records.reduce((sum,r)=>sum+r.activeDurationMs,0);const days=new Set(records.map(r=>localDay(new Date(r.finishedAt)))).size;
   $('#export-records').disabled=!records.length&&!state.dailyRecords.length;
-  $('#history-health').innerHTML=`<div><h2>每日健康评估 · ${state.dailyRecords.length} 条记录</h2><p>气促、体力和疾病评分的变化，可以与医护一起查看。</p></div><a class="text-link" href="#daily">查看评分趋势与历史 →</a>`;
+  $('#history-health').innerHTML=`<div><h2>每日健康评估 · ${state.dailyRecords.length} 条记录</h2><p>带着记录与医护沟通。</p></div><a class="text-link" href="#daily">查看评分趋势与历史 →</a>`;
   const stats=`<div class="history-stats"><article class="card history-stat"><span>完成的练习</span><strong>${records.length}<small>次</small></strong></article><article class="card history-stat"><span>练习阶段用时</span><strong>${Math.round(totalMs/60000)}<small>分钟</small></strong></article><article class="card history-stat"><span>留下记录的日子</span><strong>${days}<small>天</small></strong></article></div>`;
-  if(!records.length){$('#history-content').innerHTML=stats+`<article class="card history-empty"><span class="icon-chip">${icon('leaf')}</span><h2>第一片新叶，等你慢慢种下</h2><p>完成一次花园练习后，这里会留下你的进度。休息不会扣分，也没有连续打卡压力。</p><a class="btn-primary" href="#garden">去训练花园 →</a></article>`;return;}
+  if(!records.length){$('#history-content').innerHTML=stats+`<article class="card history-empty"><span class="icon-chip">${icon('leaf')}</span><h2>第一片新叶，等你慢慢种下</h2><p>完成练习后查看记录。休息不扣分。</p><a class="btn-primary" href="#garden">去训练花园 →</a></article>`;return;}
   const feelings={comfortable:'舒适放松',neutral:'和平常差不多',uncomfortable:'有些不适'};
   $('#history-content').innerHTML=stats+`<div class="history-list">${[...records].reverse().map(r=>`<article class="card history-row"><div><h3>呼吸花园 · 轻柔呼吸</h3><p>${escape(new Intl.DateTimeFormat('zh-CN',{timeZone:'Asia/Shanghai',dateStyle:'medium',timeStyle:'short'}).format(new Date(r.finishedAt)))}</p><span class="history-type">${r.isDemo?'模拟示例 · ':''}自主确认记录</span></div><div class="history-result"><span><strong>${r.completedCycles}</strong> 轮</span><span><strong>${Math.round(r.activeDurationMs/1000)}</strong> 秒练习</span><span>${feelings[r.feeling] || '未记录感受'}</span></div></article>`).join('')}</div><p class="history-privacy">${state.persist&&!state.isDemo?'评估数值和训练记录已在本浏览器保存。':'记录仅留在当前页面，刷新或关闭后清除。'} 原始报告不保存；这些记录不代表肺功能或治疗效果。</p>`;
 }
@@ -330,7 +332,7 @@ $('#clear-data').addEventListener('click',async()=>{
 });
 $$('dialog').forEach(dialog=>dialog.addEventListener('click',event=>{if(event.target===dialog){const r=dialog.getBoundingClientRect();if(event.clientX<r.left||event.clientX>r.right||event.clientY<r.top||event.clientY>r.bottom)dialog.close();}}));
 
-const pageTitles={home:'今日康复',daily:'每日健康评估',assessment:'报告与健康画像',education:'疾病宣教',music:'音乐疗法',garden:'训练花园',history:'康复记录'};
+const pageTitles={home:'今日康复',daily:'每日健康评估',assessment:'报告与健康画像',education:'疾病宣教',inhaler:'吸入剂教学',music:'音乐疗法',garden:'训练花园',history:'康复记录'};
 function navigate() {
   const page=location.hash.slice(1) in pageTitles ? location.hash.slice(1):'home';
   if(page!=='garden')stopGame();
@@ -341,6 +343,8 @@ function navigate() {
   if(page==='daily')renderDaily();
   if(page==='assessment')assessmentWizard.refresh();
   if(page==='education')renderEducation();else{educationView?.dispose();educationView=null;}
+  if(page==='inhaler'&&!inhalerView)inhalerView=mountInhaler($('#inhaler-container'));
+  if(page!=='inhaler'){inhalerView?.dispose();inhalerView=null;}
   $('#demo-banner').hidden=!state.isDemo;
   window.scrollTo({top:0,behavior:'instant'});
 }

@@ -1,0 +1,94 @@
+/* Patient chapters: a related picture, a short message and a clear action. */
+.chapter-heading{display:grid;grid-template-columns:170px minmax(0,1fr) auto;gap:22px;align-items:center}
+.chapter-picture{display:block;width:170px;height:112px;object-fit:contain;border-radius:18px;background:#e9f3ed}
+.chapter-heading h1{margin:0;font-size:30px;line-height:1.4}
+.chapter-heading p{max-width:38em;margin:8px 0 0;font-size:17px;line-height:1.6}
+.plan-title{justify-content:flex-start}
+.plan-title>img{width:112px;height:68px;object-fit:contain;border-radius:12px;flex-shrink:0}
+.plan-title>#export-plan{margin-left:auto}
+.home-inhaler-link{display:flex;align-items:center;gap:20px;padding:14px 22px;margin:18px 0 24px;text-decoration:none!important}
+.home-inhaler-link img{width:122px;height:72px;object-fit:contain;border-radius:10px}
+.home-inhaler-link>span:nth-child(2){flex:1;min-width:0}
+.home-inhaler-link strong{display:block;font-size:21px}
+.home-inhaler-link small{display:block;font-size:16px;color:var(--muted);line-height:1.6}
+.sidebar{overflow-y:auto;scrollbar-width:thin}
+.sidebar .nav-label{margin-top:22px}
+.sidebar-note{margin-block:16px;padding:14px 16px}
+.sidebar-note p{display:none}
+.edu-video{width:100%;max-height:440px;border-radius:16px;background:#e9f3ed;display:block}
+.edu-video-card{padding:22px;margin-bottom:22px;min-width:0}
+.edu-video-card h3{margin:0 0 12px}
+.media-source{font-size:14px;color:var(--muted);margin:10px 0 0}
+.edu-video-card{border:1px solid var(--line);background:#fff;border-radius:20px}
+.edu-video-card h4{margin:0 0 14px;font-size:21px}
+.edu-video{max-width:560px;height:auto;max-height:560px;margin-inline:auto;aspect-ratio:1 / 1}
+.edu-video-actions{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;font-size:16px;color:var(--muted);margin-top:12px}
+.edu-grid .edu-card h4{font-size:20px;color:var(--green);margin-bottom:8px}
+.edu-grid .edu-card li{margin:0;line-height:1.7}
+.edu-actions-heading{font-size:22px;margin:20px 0 14px}
+.edu-more .edu-detail-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px;margin-top:18px}
+.edu-detail-card h4{font-size:19px;margin:0 0 8px}
+.edu-detail-card ul{padding-left:24px;margin:0}
+.edu-detail-card li{font-size:16px;line-height:1.8;margin:0 0 8px}
+.inhaler-media-card{display:grid;grid-template-columns:240px minmax(0,1fr);gap:22px;padding:22px;border:1px solid var(--line);border-radius:18px;background:#fff}
+.inhaler-picture{display:block;width:240px;height:154px;object-fit:contain;background:#e9f3ed;border-radius:16px;max-width:100%}
+.inhaler-media-body h4{margin:0 0 8px}
+.inhaler-media-body p{margin:8px 0;line-height:1.6}
+.inhaler-media-body .btn-primary{white-space:normal}
+.inhaler-steps{padding-left:28px;line-height:1.9}
+.edu-heading{display:grid;grid-template-columns:220px minmax(0,1fr);gap:24px;align-items:center;margin-bottom:22px}
+.edu-heading img{width:220px;max-width:100%;height:124px;object-fit:contain;border-radius:18px;background:#e9f3ed}
+.edu-heading h3{margin:0 0 8px}
+.edu-heading p{margin:0}
+.edu-more{margin-top:22px;padding:18px 22px;border:1px solid var(--line);border-radius:16px;background:#fff}
+.edu-more>summary{cursor:pointer;font-weight:600;min-height:44px;display:flex;align-items:center;gap:12px}
+.edu-more>summary::after{content:'＋';margin-left:auto}
+.edu-more[open]>summary::after{content:'−'}
+.edu-emergency li{line-height:1.7}
+.inhaler-picker{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:20px}
+.inhaler-picker button{border:1px solid var(--line);background:#fff;color:var(--green);padding:12px 16px;border-radius:12px;min-height:48px;line-height:1.5}
+.inhaler-picker button[aria-pressed=true]{background:var(--green-soft);border-color:var(--green);box-shadow:0 4px 0 #bdcfc5;transform:translateY(-3px)}
+.inhaler-panel{padding:24px}
+.inhaler-panel h2{margin:0 0 10px}
+.inhaler-panel ol{padding-left:25px;line-height:1.9}
+.inhaler-panel .btn-primary{white-space:normal}
+body.senior-mode .chapter-heading p,body.senior-mode .home-inhaler-link small{font-size:21px}
+body.senior-mode .inhaler-picker button{font-size:21px;min-height:56px}
+body.senior-mode .media-source{font-size:18px}
+@media(max-width:1000px){
+  .chapter-heading{grid-template-columns:140px minmax(0,1fr);gap:18px}
+  .chapter-picture{width:140px;height:94px}
+  .chapter-heading>.btn-secondary,.chapter-heading>.step-pill{grid-column:1 / -1;justify-self:start}
+}
+@media(max-width:760px){
+  .chapter-heading{grid-template-columns:minmax(0,1fr) 120px;gap:14px}
+  .chapter-heading>.chapter-picture{grid-column:2;grid-row:1;width:120px;height:96px}
+  .chapter-heading>div{grid-column:1;grid-row:1}
+  .chapter-heading h1{font-size:26px}
+  .chapter-heading p{font-size:16px;line-height:1.65}
+  .chapter-heading>.btn-secondary,.chapter-heading>.step-pill{grid-row:2;font-size:16px}
+  .home-inhaler-link{padding:14px;gap:12px}
+  .home-inhaler-link img{width:92px;height:76px}
+  .home-inhaler-link strong{font-size:19px}
+  .home-inhaler-link small{font-size:16px}
+  .plan-title{gap:14px;flex-wrap:wrap}
+  .plan-title>img{width:88px;height:60px}
+  .plan-title>div{flex:1;min-width:140px}
+  .edu-heading{grid-template-columns:100px minmax(0,1fr);gap:16px}
+  .edu-heading img{width:100px;height:104px}
+  .inhaler-media-card{grid-template-columns:minmax(0,1fr);padding:18px;gap:16px}
+  .inhaler-picture{width:220px;height:124px}
+  .edu-more .edu-detail-grid{grid-template-columns:minmax(0,1fr)}
+  .edu-video-card,.inhaler-panel{padding:18px}
+  .edu-more{padding:14px 18px}
+  body.senior-mode .chapter-heading{grid-template-columns:minmax(0,1fr)}
+  body.senior-mode .chapter-heading>.chapter-picture{grid-column:1;grid-row:1;justify-self:start;width:180px;height:98px}
+  body.senior-mode .chapter-heading>div{grid-row:2}
+  body.senior-mode .chapter-heading>.btn-secondary,body.senior-mode .chapter-heading>.step-pill{grid-row:3;white-space:normal}
+  body.senior-mode .chapter-heading h1{font-size:30px}
+  body.senior-mode .home-inhaler-link{flex-wrap:wrap}
+  body.senior-mode .home-inhaler-link>span:nth-child(2){min-width:150px}
+  body.senior-mode .edu-heading{grid-template-columns:minmax(0,1fr)}
+}
+@media(prefers-reduced-motion:reduce){.inhaler-picker button[aria-pressed=true]{transform:none}}
+@media print{.chapter-picture{width:100px;height:60px}.edu-video{display:none}}

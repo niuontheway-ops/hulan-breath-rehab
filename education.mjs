@@ -419,19 +419,130 @@ function resolveTopic(topicId) {
   return typeof topicId === 'string' && Object.hasOwn(DATA, topicId) ? topicId : 'copd';
 }
 
+// Short narration is also the visible caption script for the local education videos.
+export const EDUCATION_VIDEO_SCRIPTS = Object.freeze({
+  copd: [
+    { title: '认识慢阻肺', text: '慢阻肺需要长期管理。规律治疗、戒烟和适合自己的康复，能帮助维持日常活动能力。' },
+    { title: '先把药用对', text: '吸入药按医嘱使用。复诊时演示吸入方法；含激素的药物用后漱口，不自行减药或停药。' },
+    { title: '稳定后再练习', text: '急性加重治疗后，病情稳定并经医护评估，可以开展肺康复；从轻量活动开始，分段休息。' },
+    { title: '及时求助', text: '气促、痰量或痰色比平时明显变化，尽快联系医护。严重喘憋、胸痛或意识异常，立即拨打120。' },
+  ],
+  asthma: [
+    { title: '认识哮喘', text: '哮喘症状会波动，感觉好也需要继续规范治疗。呼吸练习只能辅助，不能替代抗炎治疗。' },
+    { title: '规律吸入', text: '按个人处方使用吸入药，核对吸入方法与余量。把自己的缓解药和书面行动计划放在身边。' },
+    { title: '记录与避开诱因', text: '留意夜间憋醒、活动受限和缓解药使用。远离烟雾及明确诱因；控制变差时尽早复诊。' },
+    { title: '发作时别硬撑', text: '按行动计划处理仍不缓解，要紧急就医。只能说单字、口唇发紫或嗜睡，立即拨打120。' },
+  ],
+  bronchiectasis: [
+    { title: '认识支气管扩张', text: '支气管扩张容易反复咳嗽、咳痰或感染。学习适合自己的排痰方法，比用力猛咳更重要。' },
+    { title: '学习排痰', text: '请医护示范排痰姿势和方法，按自己的安排轻柔练习。排痰装置要按说明清洁并晾干。' },
+    { title: '发现变化就联系', text: '痰量、痰色、气促或体温明显改变，尽快联系医护。抗生素按检查和处方使用，不自行吃剩药。' },
+    { title: '咯血时暂停训练', text: '新咯血先停止排痰和训练，及时就医。出血增多并伴喘憋或头晕，立即呼救，不自行驾车。' },
+  ],
+  lungcancer: [
+    { title: '照顾治疗中的自己', text: '肺癌康复安排随治疗和恢复阶段变化。把营养、活动与复诊计划同肿瘤团队一起确定。' },
+    { title: '治疗与复诊', text: '按时治疗和复诊，主动报告新症状。药物、保健品和草药都告诉团队，不自行中断疗程。' },
+    { title: '吃得下，慢慢活动', text: '按医护允许逐步走动，可分段休息。少量多餐；吃不下或体重持续下降，尽早寻求营养支持。' },
+    { title: '出现警示先求助', text: '治疗期间发热达到团队警戒值或38度，立即联系团队。突发胸痛、严重气促或晕厥，立即呼救。' },
+  ],
+  pneumoconiosis: [
+    { title: '认识尘肺病', text: '尘肺病与长期职业粉尘暴露有关。保护肺部要先减少有害暴露，康复不能把肺部瘢痕吹开。' },
+    { title: '远离粉尘和烟雾', text: '与职业健康及呼吸专科讨论减少粉尘暴露。按岗位要求做好防护，戒烟并远离二手烟。' },
+    { title: '规律随访和活动', text: '保存工作暴露与检查资料，按计划复诊。病情稳定并获允许后，从能耐受的轻量活动开始。' },
+    { title: '别忽视新症状', text: '新发咯血、发热或气促加重，及时就医。突然一侧胸痛伴喘憋，立即停止活动并寻求急救。' },
+  ],
+  ild: [
+    { title: '认识间质性肺病', text: '间质性肺病有多种病因，药物并不相同。先明确自己的诊断，再按专科方案治疗和随访。' },
+    { title: '用药与避开暴露', text: '按处方用药并完成必要复查。把鸟类、霉菌和粉尘接触告诉医护，不买所谓逆转纤维化产品。' },
+    { title: '舒适地活动', text: '在医护评估后开展肺康复，活动可分段休息。氧疗按个人医嘱，运动中的氧需求也要评估。' },
+    { title: '呼吸变差别等待', text: '气促明显加重、活动能力骤降或血氧持续下降，尽快就医。严重喘憋、胸痛或晕厥，立即呼救。' },
+  ],
+  pneumothorax: [
+    { title: '气胸恢复要确认', text: '气胸的恢复和复发风险因人而异。先按计划复查，确认吸收及治疗效果，再安排活动和旅行。' },
+    { title: '训练先获允许', text: '仍有胸管、胸痛或气促时，不自行练呼吸或剧烈运动。恢复训练前，请主管团队明确允许。' },
+    { title: '旅行先咨询', text: '气胸未完全吸收不能乘机；完全吸收后一般仍要等至少7天并评估。压缩气瓶潜水另需专科意见。' },
+    { title: '警惕复发', text: '突然一侧胸痛并出现气促，应立即就医。严重喘憋、口唇发紫或晕厥，立即停止活动并呼救。' },
+  ],
+  effusion: [
+    { title: '先明确积液原因', text: '胸腔积液可能与感染、心脏病或肿瘤有关。重点是查清病因并治疗，呼吸训练不能排走积液。' },
+    { title: '按计划治疗', text: '按医护安排检查、治疗和复查。有胸管时保持管路与敷料妥善，不自行拔管、夹管或调节引流。' },
+    { title: '留意呼吸和管路', text: '记录气促、胸痛和体温。治疗与症状稳定后，按医护允许慢慢走动；饮水量按个人情况安排。' },
+    { title: '异常及时报告', text: '管路脱落、胸痛伴发热或呼吸突然变差，及时求助。严重喘憋、晕厥或意识异常，立即呼救。' },
+  ],
+  tb: [
+    { title: '肺结核需要全程治疗', text: '肺结核通常可以治愈。按个人方案规律完成疗程，落实感染防护，是恢复和保护家人的关键。' },
+    { title: '规律服药', text: '使用提醒防止漏药，漏服后先联系医护，不双倍补服。按计划复查，不自行缩短或延长疗程。' },
+    { title: '通风与接触者筛查', text: '按结核团队要求佩戴口罩、通风和处理痰液。密切接触者接受筛查；能否恢复聚会需团队判断。' },
+    { title: '报告药物不适', text: '黄疸、明显呕吐、皮疹或视力变化，立即联系团队。咯血增多伴气促、头晕，立即寻求急救。' },
+  ],
+  corpulmonale: [
+    { title: '兼顾肺和心脏', text: '肺心病照护需要兼顾肺病、低氧和体液变化。用药、用氧与活动都按自己的心肺团队方案。' },
+    { title: '按处方用药用氧', text: '氧气设置遵医嘱，远离烟火。利尿药不因水肿自行加倍，按要求复查肾功能和电解质。' },
+    { title: '观察体重与水肿', text: '按要求记录体重、尿量、腿部水肿和活动能力。状态稳定并获允许后，轻量活动、分段休息。' },
+    { title: '这些变化要求助', text: '水肿加重、尿少或不能平卧，尽快联系医护。嗜睡、意识模糊、严重喘憋或晕厥，立即呼救。' },
+  ],
+  osa: [
+    { title: '认识睡眠呼吸暂停', text: '打鼾不等于确诊。确诊睡眠呼吸暂停后，设备治疗、体重管理和随访共同帮助改善睡眠。' },
+    { title: '睡觉时规范佩戴', text: '按方案使用PAP或CPAP，做好清洁。面罩漏气、鼻干或不适及时求助，不自行改压力或停用。' },
+    { title: '白天和夜间都照顾', text: '规律作息，按个人目标管理体重。避免借酒助眠；明显犯困时不要驾驶或从事危险操作。' },
+    { title: '及时识别危险', text: '难以唤醒、口唇发紫或意识异常，立即呼救。嗜睡影响工作或驾驶时，停止相关活动并就医。' },
+  ],
+  quit: [
+    { title: '从今天准备戒烟', text: '戒烟任何时候都不晚。行为支持、合适的药物和家人的帮助，让你更容易坚持无烟生活。' },
+    { title: '定日子，找支持', text: '选一个戒烟日，清理烟具，告诉家人你的计划。向戒烟门诊了解支持与适合自己的药物。' },
+    { title: '让这一阵烟瘾过去', text: '烟瘾来了先延迟，短暂走动、刷牙或联系支持者。偶尔吸了一支也别放弃，尽快回到计划。' },
+    { title: '不适时及时求助', text: '戒烟药后出现皮疹或面唇肿胀，及时就医；呼吸困难立即呼救。严重情绪低落时主动寻求帮助。' },
+  ],
+});
+
+const SHORT = {
+  copd: ['按医嘱吸入，不自行停药。', '戒烟，记录气促和痰的变化。', '急性加重治疗后，稳定并经医护评估可开展肺康复。'],
+  asthma: ['按处方吸入，带好缓解药。', '保留书面行动计划，记录症状。', '避开烟雾和个人诱因，按时复诊。'],
+  bronchiectasis: ['跟医护学排痰，不猛咳。', '痰色、痰量或体温改变，及时联系医护。', '装置按说明清洁，抗生素遵医嘱。'],
+  lungcancer: ['按时治疗和复诊，报告新症状。', '少量多餐，吃不下及时求助。', '按医护允许走动，分段休息。'],
+  pneumoconiosis: ['远离有害粉尘，戒烟。', '按计划复查，带上暴露资料。', '稳定并获允许后，轻量活动。'],
+  ild: ['按病因治疗，不自行买药换药。', '避开有害暴露，按计划复查。', '活动和用氧先评估，分段休息。'],
+  pneumothorax: ['按计划复查，确认气胸吸收。', '训练和负重前，先获医护允许。', '乘机、潜水前咨询专科。'],
+  effusion: ['查清病因，按计划治疗。', '留意气促、胸痛和体温。', '有胸管时，不自行拔管或调节。'],
+  tb: ['规律完成疗程，漏药先咨询。', '通风、按指导戴口罩和处理痰液。', '接触者筛查，药物不适及时报告。'],
+  corpulmonale: ['用药用氧遵医嘱，氧气远离烟火。', '观察体重、尿量和水肿。', '稳定并获允许后，分段活动。'],
+  osa: ['睡觉时按方案使用PAP/CPAP。', '漏气或不适求助，不自行改压力。', '规律作息；犯困时不驾驶。'],
+  quit: ['选戒烟日，清理烟具。', '烟瘾来时先延迟，换一件事做。', '找家人或戒烟门诊支持；复吸后回到计划。'],
+};
+
+const ALERT = {
+  copd: '气促或痰明显改变，尽快联系医护；严重喘憋、胸痛或意识异常，立即呼救。',
+  asthma: '按行动计划处理仍不缓解，紧急就医；只能说单字、发紫或嗜睡，立即呼救。',
+  bronchiectasis: '新咯血先暂停排痰和训练；出血增多伴喘憋、头晕，立即呼救。',
+  lungcancer: '治疗期发热达到团队警戒值或38°C，立即联系团队；突发胸痛、严重气促，立即呼救。',
+  pneumoconiosis: '新发咯血、发热或气促加重，及时就医；突发胸痛伴喘憋，立即呼救。',
+  ild: '气促或低氧明显加重，尽快就医；严重喘憋、胸痛或晕厥，立即呼救。',
+  pneumothorax: '突发胸痛或气促，立即就医；严重喘憋、发紫或晕厥，立即呼救。',
+  effusion: '管路脱落或呼吸突然变差，及时求助；严重喘憋、晕厥，立即呼救。',
+  tb: '黄疸、皮疹或视力改变，立即联系团队；咯血增多伴气促、头晕，立即呼救。',
+  corpulmonale: '尿少、水肿加重或不能平卧，及时联系医护；嗜睡、意识异常或严重喘憋，立即呼救。',
+  osa: '难以唤醒、发紫或意识异常，立即呼救；嗜睡影响驾驶，停止驾驶并就医。',
+  quit: '药后皮疹、面唇肿胀及时就医；呼吸困难立即呼救，严重情绪低落及时求助。',
+};
+
 /** Returns a fresh plain object so callers cannot change shared education text. */
 export function getEducation(topicId) {
   const id = resolveTopic(topicId);
   const data = DATA[id];
   const keys = [...new Set([...data.sourceKeys, ...data.sections.flatMap(item => item.sourceKeys)])];
   return {
-    id, title: data.title, intro: data.intro,
-    sections: data.sections.map(({ title, items }) => ({ title, items: [...items] })),
-    urgent: [...data.urgent], sources: keys.map(key => ({ ...SOURCE[key] })),
+    id, title: EDUCATION_TOPICS.find(item => item.id === id).shortName, intro: EDUCATION_VIDEO_SCRIPTS[id][0].text,
+    image: { src: `assets/chapters/${id}.svg`, alt: `${EDUCATION_TOPICS.find(item => item.id === id).shortName}照护示意图` },
+    sections: SHORT[id].map((item, index) => ({ title: `0${index + 1}`, items: [item] })),
+    urgent: [ALERT[id]],
+    details: data.sections.map(({ title, items }) => ({ title, items: [...items] })),
+    additionalAlerts: [...data.urgent], sources: keys.map(key => ({ ...SOURCE[key] })),
+    video: { src: `assets/education-videos/${id}.mp4`, captions: `assets/education-videos/${id}.vtt`, poster: `assets/chapters/${id}.svg`, title: `${EDUCATION_TOPICS.find(item => item.id === id).shortName} · 日常照护短片`, kind: 'local-captioned', checked: '2026-10-11' },
+    videoCards: EDUCATION_VIDEO_SCRIPTS[id].map(item => ({ ...item })),
   };
 }
 
-/** Renders read-only educational content; no storage, network requests or patient data. */
+/** Renders read-only education. Local media is loaded only through native playback. */
 export function mountEducation(container, { initialTopic = 'copd', onTopicChange } = {}) {
   if (!container || typeof container.replaceChildren !== 'function' || !container.ownerDocument) {
     throw new TypeError('mountEducation requires a DOM container.');
@@ -457,6 +568,8 @@ export function mountEducation(container, { initialTopic = 'copd', onTopicChange
   panel.setAttribute('aria-live', 'polite');
   let currentId = resolveTopic(initialTopic);
   let disposed = false;
+  let activeVideo;
+  const pause = () => activeVideo?.pause();
   const buttons = EDUCATION_TOPICS.map(item => {
     const button = element('button', item.shortName);
     button.type = 'button';
@@ -467,41 +580,77 @@ export function mountEducation(container, { initialTopic = 'copd', onTopicChange
   });
 
   function render() {
+    pause();
     const data = getEducation(currentId);
-    const raw = DATA[currentId];
     for (const button of buttons) {
       const active = button.dataset.topic === currentId;
       button.setAttribute('aria-pressed', String(active));
       button.classList.toggle('is-active', active);
     }
-    const heading = element('h3', data.title);
-    const intro = element('p', data.intro, 'edu-intro');
+    const heading = element('div', '', 'edu-heading');
+    const picture = element('img', '', 'edu-picture');
+    picture.src = data.image.src;
+    picture.alt = data.image.alt;
+    picture.width = 640;
+    picture.height = 360;
+    picture.loading = 'lazy';
+    const headingText = element('div');
+    headingText.append(element('h3', data.title), element('p', data.intro, 'edu-intro'));
+    heading.append(picture, headingText);
+    const videoCard = element('article', '', 'edu-video-card');
+    activeVideo = element('video', '', 'edu-video');
+    activeVideo.controls = true;
+    activeVideo.playsInline = true;
+    activeVideo.preload = 'none';
+    activeVideo.src = data.video.src;
+    activeVideo.poster = data.video.poster;
+    activeVideo.setAttribute('aria-label', data.video.title);
+    const captions = element('track');
+    captions.kind = 'captions';
+    captions.srclang = 'zh';
+    captions.label = '中文字幕';
+    captions.src = data.video.captions;
+    // The picture already includes large Chinese text; captions remain optional.
+    captions.default = false;
+    activeVideo.append(captions, element('p', '浏览器不支持视频时，可打开下方短片链接。'));
+    const videoActions = element('div', '', 'edu-video-actions');
+    videoActions.append(element('span', '中文讲解 · 点击播放'));
+    const directVideo = link({ label: '打开短片', url: data.video.src });
+    directVideo.className = 'text-link';
+    videoActions.append(directVideo);
+    videoCard.append(element('h4', '先看照护视频'), activeVideo, videoActions);
+    const actionHeading = element('h4', '日常做好这 3 件事', 'edu-actions-heading');
     const grid = element('div', '', 'edu-grid');
-    data.sections.forEach((item, index) => {
+    data.sections.forEach(item => {
       const card = element('article', '', 'edu-card');
       const list = element('ul');
       item.items.forEach(text => list.append(element('li', text)));
-      const citations = element('p', '', 'edu-sources');
-      citations.append(element('span', '依据：'));
-      raw.sections[index].sourceKeys.forEach((key, sourceIndex) => {
-        if (sourceIndex) citations.append(document.createTextNode(' · '));
-        citations.append(link(SOURCE[key]));
-      });
-      card.append(element('h4', item.title), list, citations);
+      card.append(element('h4', item.title), list);
       grid.append(card);
     });
     const emergency = element('aside', '', 'edu-emergency');
     const emergencyList = element('ul');
     data.urgent.forEach(text => emergencyList.append(element('li', text)));
-    emergency.append(element('h4', '需要及时求助的情况'), emergencyList,
-      element('p', '严重呼吸困难、胸痛、晕厥或意识异常时，立即停止活动并联系当地急救服务；中国大陆可拨 120。'));
-    const sources = element('div', '', 'edu-sources');
-    sources.append(element('p', '资料核对：2026-10-10。以下为一般健康教育；你的治疗、用氧和活动安排以个人医嘱为准。'));
+    emergency.append(element('h4', '这些情况要及时求助'), emergencyList, element('p', '中国大陆急救电话：120。'));
+    const sources = element('details', '', 'edu-more');
+    sources.append(element('summary', '更多照护细节与依据'));
+    const detailGrid = element('div', '', 'edu-detail-grid');
+    data.details.forEach(item => {
+      const card = element('article', '', 'edu-detail-card');
+      const list = element('ul');
+      item.items.forEach(text => list.append(element('li', text)));
+      card.append(element('h4', item.title), list);
+      detailGrid.append(card);
+    });
+    const extraAlerts = element('ul', '', 'edu-detail-alerts');
+    data.additionalAlerts.forEach(text => extraAlerts.append(element('li', text)));
+    sources.append(detailGrid, element('h4', '其他需要联系医护的变化'), extraAlerts,
+      element('p', '资料核对：2026-10-11。短片为本应用制作的健康教育，不是外部机构官方视频。用药、用氧和活动安排以个人医嘱为准。', 'edu-sources'));
     data.sources.forEach((source, index) => {
       if (index) sources.append(document.createTextNode(' · '));
       sources.append(link(source));
     });
-    panel.replaceChildren(heading, intro, grid, emergency, sources);
+    panel.replaceChildren(heading, videoCard, actionHeading, grid, emergency, sources);
   }
 
   const handleTopic = event => {
@@ -515,13 +664,20 @@ export function mountEducation(container, { initialTopic = 'copd', onTopicChange
     if (typeof onTopicChange === 'function') onTopicChange(currentId);
   };
   picker.addEventListener('click', handleTopic);
+  const handleVisibility = () => { if (document.hidden) pause(); };
+  document.addEventListener('visibilitychange', handleVisibility);
+  document.defaultView?.addEventListener('hashchange', pause);
   container.replaceChildren(picker, panel);
   render();
   return {
+    pause,
     dispose() {
       if (disposed) return;
       disposed = true;
+      pause();
       picker.removeEventListener('click', handleTopic);
+      document.removeEventListener('visibilitychange', handleVisibility);
+      document.defaultView?.removeEventListener('hashchange', pause);
       picker.remove();
       panel.remove();
     },

@@ -49,7 +49,7 @@ try {
   });
   await check('all twelve education topics have in-app cards, precautions, and sources',async()=>{
     await go('education');const buttons=page.locator('.edu-topic-picker button');assert.equal(await buttons.count(),12);
-    for(let i=0;i<12;i++){await buttons.nth(i).click();assert.ok(await page.locator('.edu-card').count()>=3);assert.ok(await page.locator('.edu-emergency').isVisible());assert.ok(await page.locator('.edu-card a').count()>=3);assert.equal(await buttons.nth(i).getAttribute('aria-pressed'),'true');}
+    for(let i=0;i<12;i++){await buttons.nth(i).click();assert.ok(await page.locator('.edu-card').count()>=3);assert.ok(await page.locator('.edu-emergency').isVisible());assert.ok(await page.locator('.edu-more a').count()>=2);assert.equal(await buttons.nth(i).getAttribute('aria-pressed'),'true');}
     await page.locator('[data-topic="copd"]').click();await page.screenshot({path:path.join(out,'education-copd.png'),fullPage:true});
   });
   await check('daily assessment starts with no invented health history',async()=>{await go('daily');assert.equal(await page.locator('.daily-chart circle').count(),0);assert.match(await page.locator('.daily-history-table').innerText(),/尚无/);assert.equal(await page.locator('.daily-form [name="topic"] option').count(),12);});

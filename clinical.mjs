@@ -1,10 +1,11 @@
 // Local educational rules. Thresholds and starter durations are product safeguards,
 // not a diagnostic algorithm or a clinically validated exercise prescription.
-const RULE_VERSION = '2026-10-10.2';
+const RULE_VERSION = '2026-10-11.1';
 const DAY_MS = 86400000;
 const DISEASES = { copd: '慢阻肺', asthma: '哮喘', bronchiectasis: '支气管扩张', other: '其他气道疾病' };
 const SOURCES = [
   { label: 'ATS 2023 肺康复指南', url: 'https://doi.org/10.1164/rccm.202306-1066ST' },
+  { label: 'GOLD 2026 慢阻肺报告', url: 'https://goldcopd.org/2026-gold-report-and-pocket-guide/' },
   { label: 'GINA 2026 哮喘策略报告', url: 'https://ginasthma.org/2026-gina-strategy-report/' },
   { label: 'UKRI · MRC 呼吸困难量表', url: 'https://www.ukri.org/councils/mrc/facilities-and-resources/find-an-mrc-facility-or-resource/mrc-dyspnoea-scale/' },
   { label: 'COPD Foundation · 呼吸技巧', url: 'https://www.copdfoundation.org/Learn-More/I-am-New-to-COPD/Breathing-Techniques.aspx' },
@@ -57,7 +58,7 @@ export function validateProfile(profile) {
       add('dyspneaScore', profile.dyspneaScale === 'mrc' ? 'MRC 总分须为 1–5 的整数。' : 'mMRC 总分须为 0–4 的整数。');
     }
   }
-  if (!['stable', 'worse', 'unknown'].includes(profile.stability)) add('stability', '请选择近期症状是否稳定。');
+  if (!['stable', 'recovering', 'worse', 'unknown'].includes(profile.stability)) add('stability', '请选择目前是否稳定或处于加重后稳定阶段。');
   if (typeof profile.clinicianCleared !== 'boolean') add('clinicianCleared', '请确认医护是否评估并允许目前的轻量居家训练。');
   if (!isObject(profile.redFlags)) {
     add('redFlags', '请完成危险症状确认。');
@@ -128,7 +129,7 @@ export function createPlan(profile, now = new Date()) {
   const review = [];
   const mmrc = dyspnea(input);
   if (input.age < 18) review.push('此功能面向成人；未满 18 岁需由专门团队制定训练安排。');
-  if (input.stability !== 'stable') review.push(input.stability === 'worse' ? '近期症状加重，请先联系医护评估。' : '尚未确认近期症状稳定，需先联系医护。');
+  if (!['stable', 'recovering'].includes(input.stability)) review.push(input.stability === 'worse' ? '目前仍加重或不稳定，请先联系医护；病情稳定后再按医护安排康复。' : '尚未确认目前病情稳定，需先联系医护。');
   if (!input.clinicianCleared) review.push('尚未确认医护已评估并允许目前的轻量居家训练。');
   if (input.disease === 'asthma' && input.act == null) review.push('未提供 ACT 总分；可稍后补充既有评分，或联系医护评估后再开始训练。');
   if (['copd', 'bronchiectasis'].includes(input.disease) && input.dyspneaScore == null) {
@@ -143,7 +144,8 @@ export function createPlan(profile, now = new Date()) {
   if (input.disease === 'other') review.push('此疾病类别尚未提供专门的居家训练规则，请让医护制定方案。');
   if (review.length) return { ...plan, status: 'review', title: '先请医护复核，再开始训练', subtitle: '当前信息需要进一步评估。带上以下原因和检查资料咨询医护。', reasons: review };
 
-  const limited = mmrc == null || mmrc >= 2 || (input.disease === 'copd' && finite(input.cat) && input.cat >= 20);
+  const postExacerbation = input.disease === 'copd' && input.stability === 'recovering';
+  const limited = postExacerbation || mmrc == null || mmrc >= 2 || (input.disease === 'copd' && finite(input.cat) && input.cat >= 20);
   const walkingMinutes = input.goal === 'endurance' ? (limited ? 6 : 12) : input.goal === 'breathing' ? (limited ? 4 : 8) : (limited ? 5 : 10);
   const cycles = input.goal === 'breathing' ? 30 : 20;
   const breathingTitle = input.disease === 'copd' ? '轻柔缩唇呼吸' : '轻柔呼吸与放松';
@@ -154,7 +156,9 @@ export function createPlan(profile, now = new Date()) {
     ? '核对医护给你的哮喘行动计划和运动诱发症状应对方式；出现喘鸣或胸闷时先停止。呼吸练习不能替代控制治疗。'
     : input.disease === 'bronchiectasis'
       ? '记录痰量、颜色和症状变化；排痰手法须由医护示范。出现新咯血或明显症状加重时停止训练并就医。'
-      : '核对医护已确认的用药、用氧和肺康复安排；记录活动前后的症状，和医护讨论正式肺康复。';
+      : postExacerbation
+        ? '急性加重后病情稳定，可在医护评估后进行肺康复；按出院或康复安排训练，不自行调药、调氧。'
+        : '核对医护已确认的用药、用氧和肺康复安排；记录活动前后的症状，和医护讨论正式肺康复。';
   const sessions = [
     { id: 'breathing', title: breathingTitle, minutes: cycles / 10, instruction: breathingInstruction, intensity: '轻柔舒适；无需深吸或强吹', kind: 'breathing', frequency: '可在状态稳定时每日 1 次；以医护安排为准' },
     { id: 'walking', title: limited ? '分段缓步活动' : '舒适步行', minutes: walkingMinutes, instruction: input.disease === 'asthma' ? '先慢速热身，再在平地以仍可说完整句子的速度步行；随时可休息。按已确认的哮喘行动计划处理运动诱发症状。' : '在平地以仍可说完整句子的速度缓步；可分成短段并随时休息。活动加重气促时先停止。', intensity: '轻量；仍能说完整句子', kind: 'walking', frequency: '本周选择 3–5 天；无需每天达标' },
@@ -162,8 +166,8 @@ export function createPlan(profile, now = new Date()) {
     { id: 'education', title: '了解自己的行动计划', minutes: 2, instruction: education, intensity: '健康教育', kind: 'education', frequency: '本周阅读，并记录想咨询医护的问题' },
   ];
   const reasons = [
-    `依据自报医护诊断「${DISEASES[input.disease]}」、症状稳定状态和已获医护允许，提供轻量起步内容。`,
-    limited ? '日常活动受限或活动能力信息不足，因此从较短分段活动开始。' : '现有症状记录支持从舒适步行开始，并按体感及时休息。',
+    postExacerbation ? '慢阻肺急性加重后已稳定，且自报医护已评估允许，可从轻量分段内容开始。' : `依据自报医护诊断「${DISEASES[input.disease]}」、症状稳定状态和已获医护允许，提供轻量起步内容。`,
+    postExacerbation ? '加重后恢复阶段先采用短段活动，按医护安排增加。' : limited ? '日常活动受限或活动能力信息不足，因此从较短分段活动开始。' : '现有症状记录支持从舒适步行开始，并按体感及时休息。',
     `目标为${input.goal === 'endurance' ? '改善活动耐力' : input.goal === 'breathing' ? '熟悉舒适呼吸节奏' : '更轻松地完成日常活动'}；时长是保守产品起步值。`,
   ];
   const warnings = [...plan.warnings];

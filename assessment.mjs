@@ -10,7 +10,7 @@ export function mountAssessmentWizard({getProfile,validateProfile,onSkip,beforeA
   const steps=()=>all.filter(step=>!step.dataset.diseases||step.dataset.diseases.split(',').includes(getProfile().disease));
   function review() {
     const p=getProfile(),score=value=>value==null?'暂未提供':`${value} 分`,percent=value=>value==null?'暂未提供':`${value}%`;
-    const rows=[['年龄',p.age==null?'尚未填写':`${p.age} 岁`],['疾病',labels[p.disease]||'尚未选择'],['近期症状',{stable:'稳定',worse:'近期加重',unknown:'不确定'}[p.stability]||'尚未选择'],['医护允许',p.clinicianCleared?'已评估并允许':'尚未确认允许'],['呼吸困难评分',p.dyspneaScore==null?'暂未提供':`${p.dyspneaScale==='mrc'?'MRC':'mMRC'} ${p.dyspneaScore} 分`]];
+    const rows=[['年龄',p.age==null?'尚未填写':`${p.age} 岁`],['疾病',labels[p.disease]||'尚未选择'],['近期症状',{stable:'稳定',recovering:'加重后已稳定',worse:'仍加重 / 不稳定',unknown:'不确定'}[p.stability]||'尚未选择'],['医护允许',p.clinicianCleared?'已评估并允许':'尚未确认允许'],['呼吸困难评分',p.dyspneaScore==null?'暂未提供':`${p.dyspneaScale==='mrc'?'MRC':'mMRC'} ${p.dyspneaScore} 分`]];
     if(p.disease==='asthma')rows.push(['ACT 总分',score(p.act)]);
     if(p.disease==='copd')rows.push(['CAT 总分',score(p.cat)]);
     rows.push(['FEV₁ 预计值',percent(p.fev1Percent)],['FEV₁/FVC',percent(p.fev1Fvc)],['静息血氧',percent(p.spo2)]);
