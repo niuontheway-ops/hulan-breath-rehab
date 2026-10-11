@@ -358,3 +358,6 @@ body.senior-mode .game-voice-toggle{min-height:56px}
 }
 @media(prefers-reduced-motion:reduce){#wizard-progress-fill{transition:none}}
 @media print{#senior-toggle,#wizard-nav,.wizard-progress{display:none!important}.assessment-aside{position:static}.hero-card{padding-bottom:0}.garden-preview{padding-bottom:24px}}
+.meditation-entry{display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:20px;padding:24px;margin-bottom:24px;background:linear-gradient(120deg,#edf3e6,#fffdf5);border-color:#d9e5cf}.meditation-entry h2{font-size:23px;line-height:1.35;margin:4px 0 8px;color:#124c46}.meditation-entry p{margin:0;color:#455d51}.meditation-entry-actions{display:flex;flex-wrap:wrap;gap:10px}.meditation-entry-actions a{min-height:48px}
+@media(max-width:1100px){.meditation-entry{grid-template-columns:auto minmax(0,1fr)}.meditation-entry-actions{grid-column:1/-1}}
+@media(max-width:540px){.meditation-entry{gap:14px;padding:20px}.meditation-entry h2{font-size:22px}.meditation-entry-actions{display:grid;grid-template-columns:1fr;width:100%}.meditation-entry-actions a{white-space:normal;text-align:center}body.senior-mode .meditation-entry{grid-template-columns:1fr}body.senior-mode .meditation-entry h2{font-size:26px}}

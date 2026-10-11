@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createBreathingSession, getBreathingFrame, getPatientAnimationFrame, getPatientPoseGeometry } from '../game.mjs';
+import { getMeditationFrame, normalizeActivityMode } from '../meditation.mjs';
 
 const config = { inhaleSeconds: 2, exhaleSeconds: 4, cycles: 2 };
 
@@ -311,4 +312,70 @@ test('stopping emits a terminal state immediately and observer copies cannot alt
   session.stop();
   session.resume();
   assert.deepEqual(statuses, ['idle', 'running', 'stopped']);
+});
+
+test('imagined stairs advance one step during inspiration and two during expiration', () => {
+  const at = ms => getMeditationFrame({ ...getBreathingFrame(ms, config), completedCycles: 0 }, 'stairs').position;
+  assert.equal(at(0), 0);
+  assert.equal(at(1000), .5);
+  assert.equal(at(2000), 1);
+  assert.equal(at(4000), 2);
+  assert.equal(at(6000), 3);
+  assert.ok(Math.abs(at(1999) - at(2000)) < .001);
+});
+
+test('imagined meadow travel is two steps during inspiration and four during expiration', () => {
+  const at = ms => getMeditationFrame({ ...getBreathingFrame(ms, config), completedCycles: 0 }, 'meadow').position;
+  assert.equal(at(1000), 1);
+  assert.equal(at(2000), 2);
+  assert.equal(at(4000), 4);
+  assert.equal(at(6000), 6);
+});
+
+test('confirmation preserves imagined travel across rounds without a reset or extra distance', () => {
+  let time = 0;
+  const session = createBreathingSession(config, { now: () => time });
+  session.start();
+  time = 6000;
+  for (const mode of ['stairs', 'meadow']) {
+    const before = getMeditationFrame(session.getState(), mode);
+    assert.equal(before.position, mode === 'stairs' ? 3 : 6);
+  }
+  const before = getMeditationFrame(session.getState(), 'stairs');
+  time = 70_000;
+  assert.deepEqual(getMeditationFrame(session.getState(), 'stairs'), before);
+  session.confirm();
+  assert.equal(getMeditationFrame(session.getState(), 'stairs').position, before.position);
+  time += 6000;
+  const finished = getMeditationFrame(session.getState(), 'meadow');
+  session.confirm();
+  assert.equal(getMeditationFrame(session.getState(), 'meadow').position, finished.position);
+});
+
+test('paused and stopped imagined travel retains its real elapsed position', () => {
+  let time = 0;
+  const session = createBreathingSession(config, { now: () => time });
+  session.start(); time = 3700; session.pause('mode-change');
+  const paused = getMeditationFrame(session.getState(), 'stairs');
+  time += 50_000;
+  assert.deepEqual(getMeditationFrame(session.getState(), 'stairs'), paused);
+  session.stop();
+  assert.equal(getMeditationFrame(session.getState(), 'stairs').position, paused.position);
+  const custom = createBreathingSession({ inhaleSeconds: 1, exhaleSeconds: 5, cycles: 2 }, { now: () => time });
+  custom.start(); time += 1700; custom.pause();
+  const inheritedTiming = getMeditationFrame(custom.getState(), 'stairs').position;
+  custom.stop();
+  assert.equal(getMeditationFrame(custom.getState(), 'stairs').position, inheritedTiming);
+});
+
+test('reduced-motion meditation is static throughout both breathing phases', () => {
+  for (const mode of ['stairs', 'meadow']) {
+    const a = getMeditationFrame({ ...getBreathingFrame(100, config), completedCycles: 1 }, mode, { reducedMotion: true });
+    const b = getMeditationFrame({ ...getBreathingFrame(5000, config), completedCycles: 1 }, mode, { reducedMotion: true });
+    assert.deepEqual(a, b);
+    assert.equal(a.motion, 'reduced');
+    assert.equal(a.lift, 0);
+  }
+  assert.equal(normalizeActivityMode('stairs'), 'stairs');
+  assert.equal(normalizeActivityMode('unknown'), 'demonstration');
 });

@@ -1,3 +1,5 @@
+import { normalizeActivityMode, meditationMarkup, updateMeditationScene } from './meditation.mjs';
+
 export const DEFAULT_BREATHING = Object.freeze({
   inhaleSeconds: 2,
   exhaleSeconds: 4,
@@ -233,6 +235,9 @@ const gameStyles = `
 @media(max-width:1020px){.game-visuals{grid-template-columns:minmax(0,1fr)}.game-visuals .game-landscape{padding-top:44px;padding-bottom:40px}.game-visuals .game-scene{max-height:185px;min-height:0}.game-patient{max-height:365px}}
 @media(max-width:540px){.game-demonstration{padding:15px}.game-patient{max-height:315px}.game-detail-grid{gap:8px}.game-detail{padding:10px 9px 8px;border-radius:14px}.game-detail figcaption{font-size:12px;gap:5px}.game-detail figcaption span{width:20px;height:20px;font-size:10px;flex-shrink:0}.game-detail-label{font-size:12px}.game-demo-heading{flex-wrap:wrap}.game-pose-controls{gap:6px}.game-pose-controls>span{flex-basis:100%}.game-shell .game-pose-button{flex:1;min-width:0;padding:8px 5px;min-height:44px}}
 body.senior-mode .game-detail-grid{grid-template-columns:minmax(0,1fr)}body.senior-mode .game-detail figcaption{font-size:20px}body.senior-mode .game-detail svg{max-height:170px}body.senior-mode .game-pose-controls>span{font-size:18px}body.senior-mode .game-pose-controls{gap:9px}
+.game-shell [hidden]{display:none!important}.game-mode-controls{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px;margin:21px 28px 0}.game-shell .game-mode-button{min-width:0;padding:12px 8px;border-radius:16px;font-size:14px;background:#fdfef9}.game-shell .game-mode-button[aria-pressed="true"]{color:#fff;background:#216858;border-color:#216858;box-shadow:0 5px 14px #21685818}.game-shell[data-mode="stairs"] .game-visuals,.game-shell[data-mode="meadow"] .game-visuals{display:block}.game-meditation{border:1px solid #d6e2ca;background:#fafcf4;border-radius:24px;overflow:hidden}.game-meditation-heading{padding:20px 24px 15px}.game-imagine-chip{display:inline-block;background:#e8eedb;color:#405e39;font-size:12px;border-radius:20px;padding:4px 10px;margin-bottom:7px}.game-meditation-heading h4{font-size:25px;line-height:1.3;letter-spacing:-.025em;color:#285443;margin:0}.game-meditation-heading p{font-size:14px;color:#52664b;margin:7px 0 0}.game-meditation-stage{overflow:hidden;background:#d4e1b6}.game-meditation-stage svg{display:block;width:100%;height:auto;max-height:none}.game-meditation-caption{display:flex;gap:12px;align-items:center;justify-content:space-between;padding:16px 24px 0}.game-meditation-caption strong{font-size:17px;color:#2d5845}.game-meditation-caption span{font-size:13px;color:#566950;font-variant-numeric:tabular-nums}.game-meditation-note{font-size:13px;line-height:1.65;margin:8px 24px 19px;color:#566950}
+@media(max-width:540px){.game-mode-controls{gap:7px;margin:18px 18px 0}.game-shell .game-mode-button{font-size:13px;padding:12px 5px;border-radius:12px;min-height:49px}.game-meditation-heading{padding:17px 16px 13px}.game-meditation-heading h4{font-size:23px}.game-meditation-heading p{font-size:13px}.game-meditation-stage svg{width:calc(100% + 70px);max-width:none;margin-left:-35px}.game-meditation-caption{display:block;padding:14px 16px 0}.game-meditation-caption strong,.game-meditation-caption span{display:block}.game-meditation-caption strong{font-size:16px}.game-meditation-caption span{margin-top:5px}.game-meditation-note{margin:7px 16px 17px}}
+body.senior-mode .game-mode-controls{grid-template-columns:1fr}body.senior-mode .game-mode-button{font-size:20px;min-height:52px}body.senior-mode .game-meditation-heading h4{font-size:28px}body.senior-mode .game-meditation-heading p,body.senior-mode .game-meditation-caption strong{font-size:20px}body.senior-mode .game-meditation-caption span,body.senior-mode .game-meditation-note{font-size:18px}body.senior-mode .game-meditation-caption{flex-wrap:wrap}
 `;
 
 function sceneMarkup(id) {
@@ -307,7 +312,7 @@ const demonstrationNotes = {
   abdomen: '腹部观察：先由医护示范并确认适合你。手轻放腹部，感受自然起伏；保持轻柔，不要刻意深吸或用力鼓腹。',
 };
 
-export function mountGame(container, { breathing = {}, onComplete = () => {}, onStop = () => {}, onStateChange = () => {} } = {}) {
+export function mountGame(container, { breathing = {}, initialMode = 'demonstration', onComplete = () => {}, onStop = () => {}, onStateChange = () => {} } = {}) {
   if (!container || typeof container.replaceChildren !== 'function') {
     throw new TypeError('mountGame requires a DOM container.');
   }
@@ -316,14 +321,17 @@ export function mountGame(container, { breathing = {}, onComplete = () => {}, on
   const win = doc.defaultView;
   const session = createBreathingSession(settings, { now: () => win.performance.now(), onStateChange });
   const id = `breathing-garden-${++instanceCount}`;
+  let activityMode = normalizeActivityMode(initialMode);
   const root = doc.createElement('section');
   root.className = 'game-shell';
   root.setAttribute('aria-label', '呼吸小花园互动训练');
   root.innerHTML = `<style>${gameStyles}</style>
-    <div class="game-heading"><div><h3>呼吸小花园</h3><p>跟着人物示范，轻轻吸气、缓慢呼气。每一轮都由你自己确认。</p></div><span class="game-chip">轻松练习</span></div>
+    <div class="game-heading"><div><h3 data-game-title>呼吸小花园</h3><p data-game-intro>跟着人物示范，轻轻吸气、缓慢呼气。每一轮都由你自己确认。</p></div><span class="game-chip" data-game-chip>轻松练习</span></div>
+    <div class="game-mode-controls" role="group" aria-label="选择呼吸引导方式"><button type="button" class="game-mode-button" data-game-mode="demonstration" aria-pressed="true">跟做示范</button><button type="button" class="game-mode-button" data-game-mode="stairs" aria-pressed="false">想象阶梯</button><button type="button" class="game-mode-button" data-game-mode="meadow" aria-pressed="false">草地慢走</button></div>
     <div class="game-visuals">
       <section class="game-demonstration" aria-labelledby="${id}-demo-heading"><div class="game-demo-heading"><h4 id="${id}-demo-heading">跟着人物练习</h4><span>动作与倒计时同步</span></div><div class="game-patient-stage">${patientMarkup(id)}</div>${detailMarkup(id)}<p class="game-demo-step" data-game-demo-step>坐稳，肩颈放松</p><p class="game-demo-instruction" data-game-demo-instruction>双脚着地，一手轻放胸部，一手轻放腹部。</p><div class="game-demo-controls" role="group" aria-label="查看呼吸动作解说"><button type="button" class="game-demo-button" data-game-demo="inhale" aria-pressed="false">鼻吸</button><button type="button" class="game-demo-button" data-game-demo="exhale" aria-pressed="false">缩唇呼气</button><button type="button" class="game-demo-button" data-game-demo="abdomen" aria-pressed="true">腹部观察</button></div><p class="game-demo-explanation" data-game-demo-explanation aria-live="polite">${demonstrationNotes.abdomen}</p><div class="game-pose-controls" role="group" aria-label="动作静帧查看"><span>看清动作</span><button class="game-pose-button" type="button" data-game-pose="inhale" aria-pressed="false">吸气静帧</button><button class="game-pose-button" type="button" data-game-pose="exhale" aria-pressed="false">呼气静帧</button><button class="game-pose-button" type="button" data-game-pose="follow" aria-pressed="true">跟随节奏</button></div><p class="game-reduced-note" data-game-reduced-note></p></section>
       <div class="game-landscape"><h4 class="game-garden-heading">成长小花园</h4>${sceneMarkup(id)}<span class="game-garden-note" data-game-garden-note>小苗在等你，一起慢慢来</span></div>
+      ${meditationMarkup(id, settings.cycles)}
     </div>
     <div class="game-console">
       <div class="game-guide"><div class="game-orbit" aria-hidden="true"><span class="game-breath-disc"></span><span class="game-count" data-game-count>—<small>准备</small></span></div><div><p class="game-phase" data-game-phase>准备好，再开始</p><p class="game-instruction" data-game-instruction>用鼻轻轻吸气 ${settings.inhaleSeconds} 秒，缩唇缓慢呼气 ${settings.exhaleSeconds} 秒。不屏息，不用力吹。</p></div></div>
@@ -334,11 +342,25 @@ export function mountGame(container, { breathing = {}, onComplete = () => {}, on
       <p class="game-status-note" data-game-note>如感到不适，请立即停止并休息。</p>
       <div class="game-controls"><button type="button" class="game-primary" data-game-action="primary">开始本轮</button><button type="button" class="game-secondary" data-game-action="pause" disabled>暂停</button><button type="button" class="game-stop" data-game-action="stop">停止并休息</button></div>
       <div class="game-options"><label class="game-voice-toggle"><input type="checkbox" data-game-voice/>朗读鼓励（默认关闭）</label><span data-game-voice-note>文字鼓励始终显示</span></div>
-      <p class="game-privacy">人物动画是动作示范。记录来自你的自行确认，仅表示完成了引导练习。未检测实际呼吸质量，也不代表肺功能改善；不使用麦克风或摄像头。</p>
+      <p class="game-privacy" data-game-privacy>人物动画是动作示范。记录来自你的自行确认，仅表示完成了引导练习。未检测实际呼吸质量，也不代表肺功能改善；不使用麦克风或摄像头。</p>
     </div>`;
   container.replaceChildren(root);
 
   const elements = {
+    title: root.querySelector('[data-game-title]'),
+    intro: root.querySelector('[data-game-intro]'),
+    chip: root.querySelector('[data-game-chip]'),
+    privacy: root.querySelector('[data-game-privacy]'),
+    modeButtons: [...root.querySelectorAll('[data-game-mode]')],
+    demonstration: root.querySelector('.game-demonstration'),
+    garden: root.querySelector('.game-landscape'),
+    meditation: root.querySelector('[data-game-meditation]'),
+    meditationScenes: [...root.querySelectorAll('[data-meditation-scene]')],
+    meditationTitle: root.querySelector('[data-meditation-title]'),
+    meditationSummary: root.querySelector('[data-meditation-summary]'),
+    meditationCue: root.querySelector('[data-meditation-cue]'),
+    meditationPosition: root.querySelector('[data-meditation-position]'),
+    meditationNote: root.querySelector('[data-meditation-note]'),
     phase: root.querySelector('[data-game-phase]'),
     instruction: root.querySelector('[data-game-instruction]'),
     count: root.querySelector('[data-game-count]'),
@@ -524,6 +546,31 @@ export function mountGame(container, { breathing = {}, onComplete = () => {}, on
     elements.reducedNote.textContent = motionQuery.matches ? '已减少动效。可用上方静帧按钮看清吸气、呼气姿势。' : '动作幅度为演示而放大；轻柔呼吸，不用力鼓腹。';
   }
 
+  function renderMode(state) {
+    const meditation = activityMode !== 'demonstration';
+    const stairs = activityMode === 'stairs';
+    root.dataset.mode = activityMode;
+    root.setAttribute('aria-label', meditation ? '坐位或卧位呼吸冥想' : '呼吸小花园互动训练');
+    elements.title.textContent = meditation ? '呼吸冥想' : '呼吸小花园';
+    elements.intro.textContent = meditation ? '坐稳或舒适卧位，想象一段轻松的旅程。每轮由你自己确认。' : '跟着人物示范，轻轻吸气、缓慢呼气。每一轮都由你自己确认。';
+    elements.chip.textContent = meditation ? '坐卧想象' : '轻松练习';
+    elements.demonstration.hidden = meditation;
+    elements.garden.hidden = meditation;
+    elements.meditation.hidden = !meditation;
+    for (const button of elements.modeButtons) button.setAttribute('aria-pressed', String(button.dataset.gameMode === activityMode));
+    for (const scene of elements.meditationScenes) scene.toggleAttribute('hidden', scene.dataset.meditationScene !== activityMode);
+    elements.privacy.textContent = meditation ? '场景仅作想象，请保持坐位或卧位，不需要真的爬楼或行走。记录来自自行确认；未测量呼吸质量或肺功能，不使用麦克风或摄像头。' : '人物动画是动作示范。记录来自你的自行确认，仅表示完成了引导练习。未检测实际呼吸质量，也不代表肺功能改善；不使用麦克风或摄像头。';
+    if (!meditation) return;
+    const frame = updateMeditationScene(elements.meditation, state, activityMode, { reducedMotion: motionQuery.matches });
+    const inhale = state.phase === 'inhale';
+    const unit = stairs ? '个台阶' : '步';
+    elements.meditationTitle.textContent = stairs ? '想象一段安静的阶梯' : '想象走在绿油油的草地上';
+    elements.meditationSummary.textContent = `坐稳或舒适卧位。吸气 ${settings.inhaleSeconds} 秒想象 ${frame.inhaleSteps} ${unit}，呼气 ${settings.exhaleSeconds} 秒想象 ${frame.exhaleSteps} ${unit}。`;
+    elements.meditationCue.textContent = state.status === 'running' ? `${inhale ? '轻轻吸气' : '缓慢呼气'} · 想象 ${inhale ? frame.inhaleSteps : frame.exhaleSteps} ${unit}` : state.status === 'paused' ? '画面已停住，先休息' : state.status === 'awaiting-confirmation' ? '这一轮引导结束，等你确认' : state.status === 'completed' ? '这次冥想已完成' : state.status === 'stopped' ? '想象引导已停止' : `吸气想象 ${frame.inhaleSteps} ${unit}，呼气想象 ${frame.exhaleSteps} ${unit}`;
+    elements.meditationPosition.textContent = `第 ${state.currentCycle} / ${state.totalCycles} 轮 · 仅作想象`;
+    elements.meditationNote.textContent = motionQuery.matches ? '已减少动效，场景静止；跟随文字和秒数轻柔呼吸。' : '光点代表想象中的前进。轻柔呼吸，不屏息，不勉强跟拍。';
+  }
+
   function render() {
     const state = session.getState();
     root.dataset.status = state.status;
@@ -542,7 +589,7 @@ export function mountGame(container, { breathing = {}, onComplete = () => {}, on
       if (state.status === 'paused') {
         phaseText = '已经暂停，先休息';
         instruction = '阶段剩余时间已保留，准备好后再继续。';
-        note = state.pauseReason === 'hidden' ? '离开页面时已自动暂停；请主动点击「继续本轮」。' : '休息一下也很好，准备好再继续。';
+        note = state.pauseReason === 'hidden' ? '离开页面时已自动暂停；请主动点击「继续本轮」。' : state.pauseReason === 'mode-change' ? '切换场景时已暂停，本轮时间保留；准备好后点击「继续本轮」。' : '休息一下也很好，准备好再继续。';
       }
     } else if (state.status === 'awaiting-confirmation') {
       phaseText = '这一轮引导结束';
@@ -562,6 +609,19 @@ export function mountGame(container, { breathing = {}, onComplete = () => {}, on
       count = '—';
       countLabel = '休息';
       note = '如感到不适，请根据页面的安全提示处理。';
+    }
+    if (activityMode !== 'demonstration') {
+      if (state.status === 'running') {
+        const inhale = state.phase === 'inhale';
+        const stairs = activityMode === 'stairs';
+        const steps = stairs ? inhale ? 1 : 2 : inhale ? 2 : 4;
+        phaseText = inhale ? '轻轻吸气，想象前进' : '缓慢呼气，想象前进';
+        instruction = `${inhale ? '吸气' : '呼气'} ${inhale ? settings.inhaleSeconds : settings.exhaleSeconds} 秒，想象${stairs ? '上' : '走'} ${steps} ${stairs ? '个台阶' : '步'}。保持坐位或卧位。`;
+      } else if (state.status === 'idle') {
+        instruction = '保持坐位或舒适卧位，用轻柔呼吸带领想象。无需真实爬楼或行走。';
+      } else if (state.status === 'completed') {
+        phaseText = '这次呼吸冥想已完成';
+      }
     }
     elements.phase.textContent = phaseText;
     elements.instruction.textContent = instruction;
@@ -586,8 +646,9 @@ export function mountGame(container, { breathing = {}, onComplete = () => {}, on
     elements.plant.setAttribute('transform', `translate(430 365) scale(${(0.46 + ratio * 0.5) * (motion ? 1 + breath * 0.025 : 1)})`);
     for (const leaf of elements.leaves) leaf.setAttribute('opacity', ratio >= Number(leaf.dataset.gameLeaf) ? '1' : '0');
     elements.flower.setAttribute('opacity', state.status === 'completed' ? '1' : '0');
+    renderMode(state);
     renderPatient(state);
-    const announcement = `${state.status}-${state.phase}-${state.completedCycles}`;
+    const announcement = `${activityMode}-${state.status}-${state.phase}-${state.completedCycles}`;
     if (announcement !== previousAnnouncement) {
       previousAnnouncement = announcement;
       elements.live.textContent = `${phaseText}。已确认 ${state.completedCycles} 轮，共 ${state.totalCycles} 轮。`;
@@ -618,6 +679,18 @@ export function mountGame(container, { breathing = {}, onComplete = () => {}, on
   }
 
   function onClick(event) {
+    const modeButton = event.target.closest?.('[data-game-mode]');
+    if (modeButton && root.contains(modeButton) && !disposed) {
+      const selected = normalizeActivityMode(modeButton.dataset.gameMode);
+      if (selected === activityMode) return;
+      session.pause('mode-change');
+      cancelSpeech();
+      activityMode = selected;
+      inspectionPhase = null;
+      for (const button of elements.poseButtons) button.setAttribute('aria-pressed', String(button.dataset.gamePose === 'follow'));
+      refresh();
+      return;
+    }
     const poseButton = event.target.closest?.('[data-game-pose]');
     if (poseButton && root.contains(poseButton) && !disposed) {
       const selected = poseButton.dataset.gamePose;
@@ -677,6 +750,7 @@ export function mountGame(container, { breathing = {}, onComplete = () => {}, on
           activeDurationMs: state.activeDurationMs,
           activeGuidanceSeconds: state.activeGuidanceSeconds,
           breathing: { ...settings },
+          activityMode,
           selfReported: true,
           breathingQualityMeasured: false,
         });

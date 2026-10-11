@@ -8,6 +8,7 @@ const root=fileURLToPath(new URL('../dist/',import.meta.url));
 const port=Number(process.env.PORT||4173);
 if(!Number.isInteger(port)||port<1||port>65535)throw new Error('Invalid local server port');
 const mime={'.html':'text/html; charset=utf-8','.css':'text/css; charset=utf-8','.mjs':'text/javascript; charset=utf-8','.js':'text/javascript; charset=utf-8','.json':'application/json; charset=utf-8','.svg':'image/svg+xml','.jpg':'image/jpeg','.jpeg':'image/jpeg','.png':'image/png','.webp':'image/webp','.mp4':'video/mp4','.vtt':'text/vtt; charset=utf-8','.wasm':'application/wasm','.gz':'application/gzip','.bcmap':'application/octet-stream','.ttf':'font/ttf','.pfb':'application/octet-stream'};
+mime['.webmanifest']='application/manifest+json; charset=utf-8';
 try{await stat(path.join(root,'index.html'));}catch{console.error('请先运行 pnpm build，生成 dist 后再启动。');process.exit(1);}
 const buildInfo=await readFile(path.join(root,'build-info.json'));
 const fingerprint=createHash('sha256').update(buildInfo).digest('hex');
