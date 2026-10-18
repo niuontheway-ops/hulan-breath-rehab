@@ -15,6 +15,12 @@ page.on('pageerror',error=>errors.push(error.message));
 page.on('request',request=>{if(!request.url().startsWith(base)&&!request.url().startsWith('blob:')&&!request.url().startsWith('data:'))external.push(request.url());});
 const check=async(name,run)=>{await run();checks.push({name,passed:true});console.log('PASS '+name);};
 const go=async view=>{await page.goto(base+'/#'+view);await page.locator('#view-'+view).waitFor({state:'visible'});};
+async function teachingOnly(){
+  const cards=page.locator('#plan-sessions .session-card');assert.equal(await cards.count(),3);
+  assert.deepEqual(await cards.locator('a').evaluateAll(items=>items.map(item=>item.getAttribute('href')).sort()),['#education','#garden','#inhaler']);
+  assert.equal(await cards.locator('.session-footer').count(),0);assert.doesNotMatch((await cards.allTextContents()).join(' '),/分钟起步|每周\s*\d|负荷\s*\d/);
+  assert.equal(await page.locator('#rehab-home-summary .prescription-facts').count(),0);
+}
 const shot=name=>page.screenshot({path:fileURLToPath(new URL(name,out)),fullPage:true});
 let fatalError=null;
 async function createProfile(stage,cleared=true,redFlag=false){
@@ -98,14 +104,15 @@ try{
     const bad=await fetch(base+'/assets/education-videos/copd.mp4',{headers:{Range:'bytes=99999999-'}});assert.equal(bad.status,416);
     const captions=await fetch(base+'/assets/education-videos/copd.vtt');assert.match(captions.headers.get('content-type'),/^text\/vtt/);assert.match(await captions.text(),/^WEBVTT/);
   });
-  await check('stabilized post-exacerbation COPD creates a light, divided rehabilitation plan',async()=>{
-    await createProfile('recovering');assert.equal(await page.locator('.session-card').count(),4);
+  await check('stabilized post-exacerbation COPD retains teaching and routes actual dose through clinician confirmation',async()=>{
+    await createProfile('recovering');await teachingOnly();
     assert.match(await page.locator('#plan-notice').innerText(),/轻量/);
+    await go('garden');assert.ok(await page.locator('#readiness-form').isVisible());await go('home');
     await shot('recovery-plan.png');
   });
   await check('current instability, no clinician clearance and red flags still block independent training',async()=>{
     for(const [stage,cleared,red] of [['worse',true,false],['recovering',false,false],['recovering',true,true]]){
-      await createProfile(stage,cleared,red);assert.equal(await page.locator('.session-card').count(),0);
+      await createProfile(stage,cleared,red);await teachingOnly();await go('garden');assert.equal(await page.locator('#readiness-form').count(),0);assert.equal(await page.locator('.game-shell').count(),0);assert.match(await page.locator('#garden-gate').innerText(),/复核|急救|医护|不稳定/);
     }
   });
   for(const width of [1440,390,320])for(const large of [false,true]){

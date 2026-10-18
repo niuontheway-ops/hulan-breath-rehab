@@ -8,6 +8,7 @@ import {createMusicPlayer,mountMusic} from './music.mjs';
 import {mountAssessmentWizard,mountSeniorMode} from './assessment.mjs';
 import {mountUIMotion} from './ui-motion.mjs';
 import {mountMobileInstall} from './mobile-install.mjs';
+import {mountRehabWorkbench} from './rehab-workbench.mjs';
 
 const $ = selector => document.querySelector(selector);
 const $$ = selector => [...document.querySelectorAll(selector)];
@@ -42,6 +43,7 @@ function localDay(date = new Date()) {
 }
 const state = {profile:null,records:[],dailyRecords:[],persist:false,isDemo:false,plan:null,assessmentDirty:false,dailyDraftGate:null};
 let game = null;
+let rehabWorkbench = null;
 let meditationInitialMode = 'stairs';
 let dailyView = null;
 let dailyViewDay = null;
@@ -72,6 +74,7 @@ function saveState() {
     else localStorage.removeItem(storageKey);
     $('#storage-status').textContent = state.persist ? '已开启本机保存。原始报告不保存。' : '当前仅在本次页面中使用，刷新后清除。';
   } catch { state.persist = false; $('#save-local').checked = false; $('#storage-status').textContent = '浏览器无法保存；资料仅保留在当前页面。'; }
+  rehabWorkbench?.syncPersistence();
 }
 function readStorage() {
   try {
@@ -161,6 +164,26 @@ function renderHome() {
   }
   renderWeek();
   renderDailySummary();
+  renderRehabHome();
+}
+function rehabContext(){
+  const plan=makePlan();
+  const profile=state.profile,ageDays=profile?(Date.parse(localDay()+'T12:00:00+08:00')-Date.parse(profile.assessmentDate+'T12:00:00+08:00'))/86400000:NaN;
+  return {profile,isDemo:state.isDemo,persist:state.persist,assessmentCurrent:!!profile&&validateProfile(profile).valid&&!state.assessmentDirty&&ageDays>=0&&ageDays<=30&&!getDailyGate(),clinicianAllowed:profile?.clinicianCleared===true,noRedFlags:!!profile&&Object.values(profile.redFlags||{}).every(value=>value===false)&&!getDailyGate(),supervisedOnly:plan?.status!=='ready',reviewReasons:plan?.reasons||[]};
+}
+function renderRehabHome(){
+  const summary=rehabWorkbench?.getSummary(),p=summary?.programme,ready=summary?.confirmed;
+  if(state.profile&&state.plan?.status==='ready'){
+    $('#hero-title').textContent=ready?'今天，按你的方案练习。':'让评估，成为训练的起点。';
+    $('#hero-description').textContent=ready?'按医护确认的剂量开始，记录实际感受与读数。':'把已有专业测量交给医护，确定适合你的训练和监测界限。';
+    $('#hero-action').textContent=ready?'查看我的康复计划':'查看医护康复方案';
+    $('#hero-action').href=ready?'#programme':'#clinic';
+  }
+  $('#rehab-home-summary').innerHTML='<article class="home-prescription"><div><span class="clinical-overline">我的康复计划</span><h2>'+(ready?'医护已确认，按计划开始。':'先定方案，再开始训练。')+'</h2><p>'+(ready?escape(p.durationWeeks)+' 周计划 · 每周 '+escape(p.frequencyPerWeek)+' 次 · '+escape(p.reviewAt)+' 复评':'结合肌力、膈肌和运动能力评估，记录每次训练前中后的变化。')+'</p></div>'+(ready?'<div class="prescription-facts"><div><strong>'+escape(p.aerobic.minutes)+'</strong><span>分钟耐力训练</span></div><div><strong>'+(p.resistance?escape(p.resistance.sets)+' × '+escape(p.resistance.reps):'待安排')+'</strong><span>力量训练组次</span></div><div><strong>'+(p.imt?.enabled?escape(p.imt.load):'按需')+'</strong><span>'+(p.imt?.enabled?escape(p.imt.unit):'选择性吸气肌训练')+'</span></div></div>':'')+'<div class="clinical-actions"><a class="btn-primary" href="#programme">我的方案与监测</a><a class="btn-secondary" href="#clinic">医护评估与复评</a></div></article>';
+  const current=!state.profile?0:!ready?1:summary.sessionCount?3:2;
+  $$('#care-path li').forEach((item,index)=>{if(index===current)item.setAttribute('aria-current','step');else item.removeAttribute('aria-current');});
+  $('#plan-summary').textContent='教学用于自我管理，实际剂量以医护确认方案为准。';
+  $('#plan-sessions').innerHTML=[['wind','呼吸动作示范','看清嘴唇、手部和腹部怎样配合。','#garden','查看动作'],['book','疾病宣教','短片、日常行动与症状求助提醒。','#education','观看短片'],['activity','吸入剂教学','按自己的装置复核操作方法。','#inhaler','选择装置']].map(([symbol,title,description,url,action])=>'<article class="card session-card"><span class="icon-chip">'+icon(symbol)+'</span><h3>'+title+'</h3><p>'+description+'</p><a class="text-link" href="'+url+'">'+action+'</a></article>').join('');
 }
 function renderWeek() {
   const today=localDay();
@@ -318,7 +341,7 @@ function enterDemo(destination='home') {
   if(!state.isDemo)savedState={profile:state.profile,records:state.records,dailyRecords:state.dailyRecords,persist:state.persist};
   discardDailyView();
   state.isDemo=true;state.persist=false;state.records=[];state.dailyRecords=[];state.assessmentDirty=false;state.profile={disease:'copd',age:62,fev1Percent:65,fev1Fvc:66,spo2:96,dyspneaScale:'mmrc',dyspneaScore:2,act:null,cat:16,stability:'stable',redFlags:{chestPain:false,severeBreathlessness:false,fainting:false,hemoptysis:false},clinicianCleared:true,assessmentDate:localDay(),goal:'daily'};
-  fillForm();renderHome();location.hash=destination;if(destination==='garden'||destination==='meditation')renderGarden();toast('当前是模拟患者示例，实际使用请退出并填写自己的评估。');
+  fillForm();rehabWorkbench?.seedDemo();renderHome();location.hash=destination;if(destination==='garden'||destination==='meditation')renderGarden();toast('当前是模拟患者示例，实际使用请退出并填写自己的评估。');
 }
 $('#demo-button').addEventListener('click',()=>enterDemo());
 $('#exit-demo').addEventListener('click',()=>{
@@ -333,22 +356,26 @@ $('#clear-data').addEventListener('click',async()=>{
   stopGame();discardDailyView();++importGeneration;await disposeReportWorker();importInProgress=false;
   try{localStorage.removeItem(storageKey);}catch{}
   Object.assign(state,{profile:null,records:[],dailyRecords:[],persist:false,isDemo:false,plan:null,assessmentDirty:false});savedState=null;reportResult=null;
+  rehabWorkbench?.clear();
   $('#assessment-form').reset();updateScale();fillForm();updateDiseaseFields();$('#report-candidates').innerHTML='';$('#report-candidates').hidden=true;$('#report-status').hidden=true;$('#report-text').value='';$('#save-local').checked=false;$('#save-local').disabled=false;$('#storage-status').textContent='已清除本机评估与记录。';clearErrors();location.hash='home';renderHome();
 });
 $$('dialog').forEach(dialog=>dialog.addEventListener('click',event=>{if(event.target===dialog){const r=dialog.getBoundingClientRect();if(event.clientX<r.left||event.clientX>r.right||event.clientY<r.top||event.clientY>r.bottom)dialog.close();}}));
 
 $$('[data-meditation-entry]').forEach(link=>link.addEventListener('click',()=>{meditationInitialMode=link.dataset.meditationEntry==='meadow'?'meadow':'stairs';}));
-const pageTitles={home:'今日康复',daily:'每日健康评估',assessment:'报告与健康画像',education:'疾病宣教',inhaler:'吸入剂教学',music:'音乐疗法',garden:'训练花园',meditation:'呼吸冥想',history:'康复记录'};
+const pageTitles={home:'今日康复',daily:'每日健康评估',assessment:'报告与健康画像',education:'疾病宣教',inhaler:'吸入剂教学',music:'音乐疗法',garden:'呼吸训练',meditation:'呼吸冥想',history:'康复记录',clinic:'医护工作台',programme:'我的康复计划'};
 function navigate() {
   const page=location.hash.slice(1) in pageTitles ? location.hash.slice(1):'home';
   const trainingPage=page==='garden'||page==='meditation';
+  const workbenchPage=page==='clinic'||page==='programme';
   if(!trainingPage)stopGame();
-  $$('.view').forEach(el=>el.hidden=el.id!==`view-${trainingPage?'garden':page}`);
+  if(!workbenchPage)rehabWorkbench?.pause();
+  $$('.view').forEach(el=>el.hidden=el.id!==`view-${trainingPage?'garden':workbenchPage?'clinic':page}`);
   $$('[data-page]').forEach(el=>{const mobile=window.matchMedia('(max-width:760px)').matches;const active=el.dataset.page===page||(page==='assessment'&&el.dataset.page==='daily'&&mobile)||(page==='meditation'&&el.dataset.page==='garden'&&mobile);el.classList.toggle('active',active);if(active)el.setAttribute('aria-current','page');else el.removeAttribute('aria-current');});
   $('#page-title').textContent=pageTitles[page];document.title=`壶兰呼吸 · ${pageTitles[page]}`;
   if(page==='home')renderHome();if(trainingPage)renderGarden();if(page==='history')renderHistory();
   if(page==='daily')renderDaily();
   if(page==='assessment')assessmentWizard.refresh();
+  if(workbenchPage){$('#clinic-heading').textContent=pageTitles[page];$('#clinic-introduction').textContent=page==='programme'?'按医护确认的方案训练，记录真实读数与感受。':'专业评估、个体方案、单次监测与同协议复评。';rehabWorkbench.refresh(page==='programme'?'patient':'clinical');}
   if(page==='education')renderEducation();else{educationView?.dispose();educationView=null;}
   if(page==='inhaler'&&!inhalerView)inhalerView=mountInhaler($('#inhaler-container'));
   if(page!=='inhaler'){inhalerView?.dispose();inhalerView=null;}
@@ -356,10 +383,11 @@ function navigate() {
   window.scrollTo({top:0,behavior:'instant'});
 }
 window.addEventListener('hashchange',navigate);
-window.addEventListener('pagehide',()=>{stopGame();musicPlayer.pause();disposeReportWorker();});
+window.addEventListener('pagehide',()=>{stopGame();rehabWorkbench?.pause();musicPlayer.pause();disposeReportWorker();});
 mountUIMotion();
 mountMobileInstall($('#mobile-install-container'));
 assessmentWizard=mountAssessmentWizard({getProfile:profileFromForm,validateProfile,onSkip:()=>{$('#valuesVerified').checked=false;state.assessmentDirty=true;},beforeAdvance:step=>step==='report'&&importInProgress?'正在识别报告，请等候处理完成，或先点“取消识别”。':null});
 mountSeniorMode();fillIcons();readStorage();fillForm();updateDiseaseFields();$('#assessmentDate').max=localDay();
+rehabWorkbench=mountRehabWorkbench($('#rehab-workbench-container'),{getContext:rehabContext,onChange:renderHome,onMessage:toast});
 $('#today-date').textContent=new Intl.DateTimeFormat('zh-CN',{timeZone:'Asia/Shanghai',month:'long',day:'numeric',weekday:'long'}).format(new Date());
 renderHome();navigate();

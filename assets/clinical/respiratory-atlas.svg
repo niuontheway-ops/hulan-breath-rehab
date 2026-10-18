@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" fill="none" role="img" aria-labelledby="title desc">
+  <title id="title">呼吸与膈肌概念示意</title>
+  <desc id="desc">左右肺、气管和膈肌轮廓的概念示意，不是患者影像或实时测量。</desc>
+  <defs>
+    <linearGradient id="lung" x1="117" y1="130" x2="280" y2="315" gradientUnits="userSpaceOnUse"><stop stop-color="#d1e8dc" stop-opacity=".76"/><stop offset="1" stop-color="#78b19d" stop-opacity=".22"/></linearGradient>
+    <radialGradient id="halo"><stop stop-color="#9dcdb7" stop-opacity=".13"/><stop offset="1" stop-color="#9dcdb7" stop-opacity="0"/></radialGradient>
+    <pattern id="grid" width="24" height="24" patternUnits="userSpaceOnUse"><path d="M24 0H0V24" stroke="#e2ece7" stroke-opacity=".055"/></pattern>
+  </defs>
+  <rect width="400" height="400" rx="20" fill="url(#grid)"/>
+  <circle cx="201" cy="208" r="188" fill="url(#halo)"/>
+  <g stroke="#c6dfd2" stroke-width="1" stroke-opacity=".26"><path d="M39 39h22M39 39v22M361 39h-22M361 39v22M39 361h22M39 361v-22M361 361h-22M361 361v-22"/><path d="M200 52v16M200 336v16M52 200h16M332 200h16"/></g>
+  <path d="M145 90c-24 7-43 22-52 43-12 27-15 77-12 120 2 29 11 52 29 59 16 7 52-5 64-25 13-21 10-83 7-109-2-25-8-41-17-58-7-13-12-27-19-30Z" fill="url(#lung)" stroke="#c2e0cf" stroke-width="1.5"/>
+  <path d="M255 90c24 7 43 22 52 43 12 27 15 77 12 120-2 29-11 52-29 59-16 7-52-5-64-25-13-21-10-83-7-109 2-25 8-41 17-58 7-13 12-27 19-30Z" fill="url(#lung)" stroke="#c2e0cf" stroke-width="1.5"/>
+  <path d="M194 55v86c0 13-18 28-34 41M206 55v86c0 13 18 28 34 41" stroke="#e1eee6" stroke-width="3.2" stroke-linecap="round"/>
+  <path d="M194 140c-13 4-29 19-44 39l-20 39m31-38-1 41m-12-32-28 6m30 17-16 42m26-32 14 31M206 140c13 4 29 19 44 39l20 39m-31-38 1 41m12-32 28 6m-30 17 16 42m-26-32-14 31" stroke="#d1e8dc" stroke-width="2.1" stroke-linecap="round"/>
+  <path d="M182 67h36M182 80h36M182 93h36M182 106h36M182 119h36" stroke="#c7dfd3" stroke-opacity=".5" stroke-width="1.5"/>
+  <path d="M82 309c29-35 62-49 118-49s89 14 118 49" stroke="#d7b56b" stroke-width="2.5" stroke-linecap="round"/>
+  <path d="M82 329c29-35 62-49 118-49s89 14 118 49" stroke="#d7b56b" stroke-opacity=".4" stroke-width="1.5" stroke-dasharray="4 6"/>
+  <path d="M200 303v28m-6-6 6 6 6-6M200 244v-20m-6 6 6-6 6 6" stroke="#d7b56b" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="200" cy="276" r="5" fill="#d7b56b"/><circle cx="200" cy="276" r="11" stroke="#d7b56b" stroke-opacity=".25"/>
+  <path d="M256 104h48l20-22M279 286h36l15 17M102 170H67l-17-18" stroke="#d1e8dc" stroke-width="1" stroke-opacity=".5"/>
+  <g fill="#d1e8dc"><circle cx="256" cy="104" r="2.5"/><circle cx="279" cy="286" r="2.5"/><circle cx="102" cy="170" r="2.5"/></g>
+</svg>

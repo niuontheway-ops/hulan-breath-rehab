@@ -54,7 +54,7 @@ try {
   await check('new illustration loads locally and official brand remains visible',async()=>{
     assert.ok(await page.locator('.official-logo').isVisible());
     const image=await page.locator('.garden-art').evaluate(el=>({loaded:el.complete&&el.naturalWidth>0,width:el.naturalWidth,src:el.getAttribute('src')}));
-    assert.ok(image.loaded);assert.equal(image.src,'assets/rehab-garden.webp');metrics.illustration=image;
+    assert.ok(image.loaded);assert.equal(image.src,'assets/clinical/respiratory-atlas.svg');metrics.illustration=image;
     assert.match(await page.locator('.topbar-brand').innerText(),/呼吸与危重症医学科三区/);
     await screenshot(page,'after-home-1440.png');
   });

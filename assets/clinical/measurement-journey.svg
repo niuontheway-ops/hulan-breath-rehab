@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 560 200" role="img" aria-labelledby="title desc">
+ <title id="title">评估到复评的康复流程</title><desc id="desc">功能测量、制定计划、患者训练、再次评估四个连续步骤的概念图，不包含患者测量数据。</desc>
+ <g fill="none" stroke="#c2d9cd" stroke-width="1.5">
+  <path d="M76 99h104m45 0h104m45 0h104" stroke-opacity=".5"/><path d="m168 93 8 6-8 6m153-12 8 6-8 6m142-12 8 6-8 6"/>
+  <rect x="30" y="53" width="86" height="91" rx="12" fill="#2b5950"/><path d="M50 110V88h14v22m8 0V75h14v35m9 0V95" stroke="#dcebe3" stroke-width="2"/><path d="M48 121h51"/>
+  <rect x="178" y="53" width="86" height="91" rx="12" fill="#2b5950"/><path d="M195 80h51m-51 18h31m-31 18h39" stroke="#dcebe3" stroke-width="2"/><circle cx="244" cy="118" r="12" fill="#d7b56b" stroke="none"/><path d="m238 118 4 4 8-8" stroke="#123f3a" stroke-width="2"/>
+  <circle cx="370" cy="99" r="44" fill="#2b5950"/><circle cx="370" cy="99" r="29" stroke="#dcebe3" stroke-width="2"/><path d="M370 70a29 29 0 0 1 29 29" stroke="#d7b56b" stroke-width="3"/><path d="m362 88 17 11-17 11Z" fill="#dcebe3" stroke="none"/>
+  <rect x="474" y="53" width="62" height="91" rx="12" fill="#2b5950"/><path d="m488 115 10-20 10 9 13-26" stroke="#d7b56b" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M488 126h34"/>
+ </g>
+</svg>

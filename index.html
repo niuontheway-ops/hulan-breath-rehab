@@ -16,6 +16,7 @@
   <link rel="stylesheet" href="interaction.css">
   <link rel="stylesheet" href="patient-content.css">
   <link rel="stylesheet" href="mobile-install.css">
+  <link rel="stylesheet" href="rehab-design.css">
 </head>
 <body>
   <a class="skip-link" href="#main">跳到主要内容</a>
@@ -26,7 +27,8 @@
       <a href="#home" data-page="home"><span class="nav-icon" data-icon="home"></span><span>今日康复</span></a>
       <a href="#daily" data-page="daily"><span class="nav-icon" data-icon="clipboard"></span><span>每日评估</span></a>
       <a href="#assessment" data-page="assessment" class="desktop-navigation"><span class="nav-icon" data-icon="activity"></span><span>报告与健康画像</span></a>
-      <a href="#garden" data-page="garden"><span class="nav-icon" data-icon="leaf"></span><span>训练花园</span><span class="new-tag">新</span></a>
+      <a href="#garden" data-page="garden"><span class="nav-icon" data-icon="leaf"></span><span>呼吸训练</span></a>
+      <a href="#clinic" data-page="clinic" class="desktop-navigation"><span class="nav-icon" data-icon="activity"></span><span>医护工作台</span></a>
       <a href="#meditation" data-page="meditation" class="desktop-navigation"><span class="nav-icon" data-icon="wind"></span><span>呼吸冥想</span></a>
       <a href="#education" data-page="education"><span class="nav-icon" data-icon="book"></span><span>疾病宣教</span></a>
       <a href="#inhaler" data-page="inhaler" class="desktop-navigation"><span class="nav-icon" data-icon="wind"></span><span>吸入剂教学</span></a>
@@ -49,29 +51,32 @@
     <main id="main" tabindex="-1">
       <div class="date-line"><span id="today-date"></span><span class="date-dot"></span><span>今天也照顾好自己</span></div>
       <section id="view-home" class="view" aria-labelledby="home-heading">
-        <div class="page-heading"><div><h1 id="home-heading">今天，舒适地练习<span class="heading-dot">。</span></h1><p>先了解身体，再开始练习。</p></div><a class="btn-secondary" href="#assessment"><span data-icon="plus"></span>更新健康评估</a></div>
-        <div id="mobile-install-container"></div>
+        <div class="page-heading"><div><h1 id="home-heading">让康复，回到生活。</h1><p>从评估出发，让训练有依据，让变化可追踪。</p></div><a class="btn-secondary" href="#clinic"><span data-icon="activity"></span>医护工作台</a></div>
         <div class="home-top-grid">
           <article class="hero-card">
             <div class="hero-copy"><span class="eyebrow">你的专属康复路径</span><h2 id="hero-title">先了解身体，<br>再开始练习。</h2><p id="hero-description">从年龄、疾病开始。<br>专业资料可以跳过。</p><a href="#assessment" class="btn-primary" id="hero-action">开始健康评估 <span>↗</span></a><div class="hero-foot"><span data-icon="shield"></span><span>先评估，再训练 · 每次都按自己的节奏</span></div></div>
             <div class="hero-art" aria-hidden="true">
-              <img class="garden-art" src="assets/rehab-garden.webp" width="1254" height="1254" alt="" decoding="async" fetchpriority="high">
-              <div class="art-label"><span class="mini-leaf">✦</span> 每一口呼吸，都是向前一步</div>
+              <img class="garden-art" src="assets/clinical/respiratory-atlas.svg" width="720" height="680" alt="" decoding="async" fetchpriority="high">
+              <div class="art-label">呼吸机制概念图 · 非诊断影像</div>
             </div>
           </article>
           <aside class="profile-card card"><div class="card-heading"><h2>我的健康画像</h2><span class="icon-chip" data-icon="clipboard"></span></div><div id="profile-summary"></div><a href="#assessment" class="text-link">查看与更新资料 <span>→</span></a></aside>
         </div>
+        <ol class="care-path" id="care-path" aria-label="康复路径"><li aria-current="step"><span class="path-number">1</span><div><strong>了解身体</strong><small>症状与功能评估</small></div></li><li><span class="path-number">2</span><div><strong>医护定方案</strong><small>剂量、界限与目标</small></div></li><li><span class="path-number">3</span><div><strong>跟随训练</strong><small>记录实际读数与感受</small></div></li><li><span class="path-number">4</span><div><strong>按约复评</strong><small>同条件测量后再调整</small></div></li></ol>
+        <div id="rehab-home-summary"></div>
         <div class="home-tools" aria-label="康复工具"><a class="card home-tool" href="#daily"><span class="icon-chip" data-icon="clipboard"></span><span><strong>每日健康评估</strong><small id="home-daily-summary">记录今天的评分与感受</small></span><span aria-hidden="true">→</span></a><a class="card home-tool" href="#education"><span class="icon-chip" data-icon="book"></span><span><strong>疾病宣教</strong><small>看视频，记住日常要点</small></span><span aria-hidden="true">→</span></a><a class="card home-tool" href="#music"><span class="icon-chip" data-icon="music"></span><span><strong>音乐疗法</strong><small>7 首原版曲目 · 支持本地音乐</small></span><span aria-hidden="true">→</span></a><a class="card home-tool" href="#history"><span class="icon-chip" data-icon="chart"></span><span><strong>康复记录</strong><small>查看练习与健康变化</small></span><span aria-hidden="true">→</span></a></div>
         <a class="card home-inhaler-link" href="#inhaler"><img src="assets/chapters/inhaler.svg" width="640" height="360" alt="吸入器与教学示意图" loading="lazy"><span><strong>吸入剂怎么用？</strong><small>选择手上的吸入器，看操作视频。</small></span><span aria-hidden="true">→</span></a>
         <div id="plan-notice" hidden></div>
         <div id="daily-home-notice" hidden></div>
-        <div class="section-title plan-title"><img src="assets/chapters/plan.svg" width="640" height="360" alt="分段步行与康复计划示意图" loading="lazy"><div><h2>今天的小目标</h2><span id="plan-summary">完成评估后，这里会出现适合你的建议。</span></div><button class="btn-quiet" id="export-plan" hidden><span data-icon="download"></span>导出方案</button></div>
+        <div class="section-title plan-title"><img src="assets/chapters/plan.svg" width="640" height="360" alt="分段步行与康复计划示意图" loading="lazy"><div><h2>学会照顾自己</h2><span id="plan-summary">动作学习、疾病知识和正确用药。</span></div><button class="btn-quiet" id="export-plan" hidden><span data-icon="download"></span>导出教学建议</button></div>
         <div id="plan-sessions" class="session-grid"></div>
         <div class="home-bottom-grid">
           <article class="garden-preview card"><div class="garden-preview-copy"><span class="eyebrow">把练习变成一点小期待</span><h2>轻轻呼吸，让小芽生长。</h2><p>跟着节奏练习，不舒服就休息。</p><a class="text-link" href="#garden">去我的训练花园 <span>→</span></a></div><div class="plant-illustration" aria-hidden="true"><svg viewBox="0 0 200 180"><ellipse cx="100" cy="158" rx="59" ry="10" fill="#deead2"/><path d="M67 123h67l-9 35H77z" fill="#d9a983"/><path d="M67 123h67v9H67z" fill="#bf8866"/><path d="M100 125V57" stroke="#437d58" stroke-width="5" stroke-linecap="round"/><path d="M100 98Q56 98 54 64Q95 57 100 98" fill="#81ab68"/><path d="M100 78Q108 34 146 43Q145 79 100 78" fill="#538d5e"/><path d="M100 66Q81 42 99 20Q120 43 100 66" fill="#a3c875"/><path d="M73 77l27 20m1-20 28-20" stroke="#deedc8" stroke-width="2" stroke-linecap="round"/><g fill="#b8cc82"><path d="m38 40 3-8 3 8 8 3-8 3-3 8-3-8-8-3z"/><path d="m156 105 2-6 2 6 6 2-6 2-2 6-2-6-6-2z"/></g></svg></div></article>
           <article class="week-card card"><div class="card-heading"><h2>这一周的坚持</h2><span id="week-count">0 次练习</span></div><div id="week-tracker" class="week-tracker"></div><div class="week-caption"><span data-icon="heart"></span><span>休息也是康复的一部分，不必补做。</span></div></article>
         </div>
+        <div id="mobile-install-container"></div>
       </section>
+      <section id="view-clinic" class="view" hidden aria-labelledby="clinic-heading"><div class="page-heading"><div><h1 id="clinic-heading">康复工作台</h1><p id="clinic-introduction">把专业评估、训练方案、单次监测和复评连起来。</p></div><a class="btn-secondary" href="#programme">查看患者方案</a></div><div id="rehab-workbench-container"></div></section>
       <section id="view-daily" class="view" hidden aria-labelledby="daily-heading"><div class="page-heading chapter-heading"><img class="chapter-picture" src="assets/chapters/daily.svg" width="640" height="360" alt="长者记录健康状态的示意图" loading="lazy"><div><h1 id="daily-heading">每日健康打卡<span class="heading-dot">。</span></h1><p>记录气促、疲劳和症状变化。</p></div><a href="#assessment" class="btn-secondary"><span data-icon="upload"></span>报告与健康画像</a></div><div id="daily-container"></div></section>
       <section id="view-education" class="view" hidden aria-labelledby="education-heading"><div class="page-heading chapter-heading"><img class="chapter-picture" src="assets/chapters/education.svg" width="640" height="360" alt="医护人员进行视频宣教的示意图" loading="lazy"><div><h1 id="education-heading">疾病宣教<span class="heading-dot">。</span></h1><p>先看视频，再记住日常要点。</p></div><a href="#inhaler" class="btn-secondary">吸入剂教学</a></div><div id="education-container"></div></section>
       <section id="view-inhaler" class="view" hidden aria-labelledby="inhaler-heading"><div class="page-heading chapter-heading"><img class="chapter-picture" src="assets/chapters/inhaler.svg" width="640" height="360" alt="吸入器与操作教学示意图" loading="lazy"><div><h1 id="inhaler-heading">吸入剂教学</h1><p>按手上的装置选视频，使用方法以医护示范和药品说明为准。</p></div><a href="#education" class="btn-secondary">疾病宣教</a></div><div id="inhaler-container"></div></section>
@@ -134,7 +139,7 @@
       <footer class="app-footer"><div class="footer-institution"><strong>壶兰呼吸 · 呼吸康复训练助手</strong><span>莆田学院附属医院</span><span>呼吸与危重症医学科三区</span></div><span>先评估，按医嘱，舒适地练习。</span><button id="privacy-footer">数据与隐私</button><button id="sources-open">建议依据与适用范围 <span>↗</span></button></footer>
     </main>
   </div>
-  <dialog id="privacy-dialog"><form method="dialog"><button class="dialog-close" aria-label="关闭数据与隐私说明">×</button></form><span class="icon-chip" data-icon="shield"></span><h2>你的资料，留在你的设备里</h2><p>评估与报告识别在本机执行，原始报告不上传或保存。疾病短片随网页提供；原版音乐、吸入剂外部视频需要联网。</p><label class="check-row"><input type="checkbox" id="save-local">在这台设备记住健康画像、每日评估与训练记录</label><p class="dialog-help">默认仅保留到页面关闭或刷新。开启后会保存到本浏览器，不加密；共用设备请勿开启，也不会跨设备同步。</p><button class="btn-secondary danger-text" id="clear-data">清除本机评估与记录</button><p id="storage-status" role="status"></p></dialog>
+  <dialog id="privacy-dialog"><form method="dialog"><button class="dialog-close" aria-label="关闭数据与隐私说明">×</button></form><span class="icon-chip" data-icon="shield"></span><h2>你的资料，留在你的设备里</h2><p>评估与报告识别在本机执行，原始报告不上传或保存。专业测量、方案和手工监测记录也在本浏览器处理。疾病短片随网页提供；原版音乐、吸入剂外部视频需要联网。</p><label class="check-row"><input type="checkbox" id="save-local">在这台设备记住健康画像、专业测量、方案与训练记录</label><p class="dialog-help">默认仅保留到页面关闭或刷新。开启后保存到本浏览器，不加密、不跨设备同步。本机工作台没有账号或医护身份认证；共用设备请勿开启保存。导出备份含健康资料，请自行妥善保管。</p><button class="btn-secondary danger-text" id="clear-data">清除本机评估与记录</button><p id="storage-status" role="status"></p></dialog>
   <dialog id="sources-dialog"><form method="dialog"><button class="dialog-close" aria-label="关闭依据说明">×</button></form><h2>建议依据与适用范围</h2><p>面向已由医护评估、病情稳定的成人患者，提供规则化康复教育建议。个体化时长与风险分流是保守产品规则，尚未经临床验证；首次训练和方案调整需医护复核。</p><p>呼吸节奏采用鼻吸约 2 秒、舒缓缩唇呼气约 4 秒，感到不适应立即停止。游戏没有呼吸传感器，不能测量呼气流量、动作质量或治疗效果。</p><ul><li><a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC10449064/" target="_blank" rel="noopener noreferrer">ATS 慢性呼吸疾病肺康复临床实践指南（2023）</a></li><li><a href="https://ginasthma.org/2026-gina-strategy-report/" target="_blank" rel="noopener noreferrer">GINA 哮喘策略报告（2026）</a></li><li><a href="https://www.copdfoundation.org/Learn-More/I-am-New-to-COPD/Breathing-Techniques.aspx" target="_blank" rel="noopener noreferrer">COPD Foundation：呼吸技巧</a></li><li><a href="https://www.copdfoundation.org/Learn-More/I-am-a-Person-with-COPD/Exercise.aspx" target="_blank" rel="noopener noreferrer">COPD Foundation：活动与运动</a></li><li><a href="https://www.ukri.org/councils/mrc/facilities-and-resources/find-an-mrc-facility-or-resource/mrc-dyspnoea-scale/" target="_blank" rel="noopener noreferrer">UKRI：MRC 量表说明</a></li></ul><p class="dialog-help">只录入既有 ACT、CAT 总分，不复制其量表题目。MRC / mMRC 保留原分与类型。本应用不调整药物、吸氧流量或代替急症处置。原应用来源：莆田学院附属医院呼吸与危重症医学科三区。</p></dialog>
   <div id="toast" class="toast" role="status" hidden></div>
   <noscript><p class="noscript-message">请开启 JavaScript 以使用本机评估与互动训练。急性不适时请及时寻求医疗帮助。</p></noscript>
