@@ -1,6 +1,6 @@
 {
   "name": "hulan-breath-rehab",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "private": true,
   "type": "module",
   "description": "慢性气道疾病的专业评估、医护方案、训练监测与复评助手",
@@ -10,7 +10,7 @@
     "start": "node scripts/serve.mjs",
     "test": "node --test tests/*.test.mjs",
     "check": "node scripts/check.mjs",
-    "test:browser": "node scripts/browser-check.mjs && node scripts/browser-restore-check.mjs && node scripts/browser-wizard-check.mjs && node scripts/browser-motion-check.mjs && node scripts/browser-content-check.mjs && node scripts/browser-demonstration-check.mjs && node scripts/browser-meditation-check.mjs && node scripts/browser-mobile-install-check.mjs && node scripts/browser-rehab-check.mjs"
+    "test:browser": "node scripts/browser-check.mjs && node scripts/browser-restore-check.mjs && node scripts/browser-wizard-check.mjs && node scripts/browser-motion-check.mjs && node scripts/browser-content-check.mjs && node scripts/browser-demonstration-check.mjs && node scripts/browser-meditation-check.mjs && node scripts/browser-mobile-install-check.mjs && node scripts/browser-rehab-check.mjs && node scripts/browser-inhaler-library-check.mjs"
   },
   "dependencies": {
     "pdfjs-dist": "5.6.205",

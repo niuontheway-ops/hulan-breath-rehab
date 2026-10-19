@@ -3,6 +3,7 @@ import {mkdir,writeFile,readFile,readdir} from 'node:fs/promises';
 import {fileURLToPath} from 'node:url';
 import path from 'node:path';
 import {chromium} from 'playwright';
+import {INHALER_DEVICES} from '../inhaler.mjs';
 
 const root=fileURLToPath(new URL('../',import.meta.url));
 const out=path.join(root,'.qa','rehab-redesign','qa');
@@ -228,10 +229,10 @@ try{
       await screenshot('mobile-320-large-'+name);
     }
   });
-  await check('Official logo, original 7 music tracks, 12 local videos and 6 inhaler teaching entries remain',async()=>{
+  await check('Official logo, original 7 music tracks, 12 local videos and expanded inhaler teaching remain',async()=>{
     await page.setViewportSize({width:1440,height:1000});await navigate('home');assert.equal(await page.locator('.official-logo').getAttribute('src'),'assets/hulan-logo.jpg');assert.match(await page.locator('.app-footer').innerText(),/呼吸与危重症医学科三区/);
     await navigate('music');assert.equal(await page.locator('[data-music-track]').count(),7);
-    await navigate('inhaler');assert.equal(await page.locator('[data-inhaler]').count(),6);assert.ok(await page.locator('.inhaler-video-link').isVisible());
+    await navigate('inhaler');assert.equal(await page.locator('[data-inhaler]').count(),INHALER_DEVICES.length);assert.ok(await page.locator('.inhaler-video-link').isVisible());
     await navigate('education');assert.equal(await page.locator('.edu-topic-picker [data-topic]').count(),12);
     const videos=(await readdir(path.join(root,'assets','education-videos'))).filter(name=>name.endsWith('.mp4'));assert.equal(videos.length,12);
     await page.locator('.edu-video').evaluate(async video=>{video.muted=true;await video.play();});await page.waitForTimeout(1000);

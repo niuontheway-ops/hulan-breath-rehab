@@ -42,14 +42,14 @@ try{
   await check('home and navigation restore a reachable inhaler teaching entry',async()=>{
     assert.ok(await page.locator('.home-inhaler-link').isVisible());
     await page.locator('.home-inhaler-link').click();await page.locator('#view-inhaler').waitFor({state:'visible'});
-    assert.equal(await page.locator('[data-inhaler]').count(),6);
+    assert.equal(await page.locator('[data-inhaler]').count(),INHALER_DEVICES.length);
   });
   await check('all original inhaler videos remain linked to the matching named device with cautions',async()=>{
     for(const device of INHALER_DEVICES){
-      await page.locator(`[data-inhaler=${device.id}]`).click();
-      assert.equal(await page.locator('.inhaler-video-link').getAttribute('href'),getInhaler(device.id).video);
+      await page.getByRole('combobox',{name:'选择手中的吸入装置',exact:true}).selectOption(device.id);
+      if(getInhaler(device.id).video)assert.equal(await page.locator('.inhaler-video-link').getAttribute('href'),new URL(getInhaler(device.id).video).href);else assert.equal(await page.locator('.inhaler-video-link').count(),0);
       assert.equal(await page.locator(`[data-inhaler=${device.id}]`).getAttribute('aria-pressed'),'true');
-      assert.equal(await page.locator('.inhaler-steps li').count(),4);
+      assert.equal(await page.locator('.inhaler-steps li').count(),getInhaler(device.id).steps.length);
       assert.ok(await page.locator('.inhaler-caution').isVisible());
     }
     await shot('inhaler-desktop.png');

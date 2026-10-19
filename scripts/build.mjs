@@ -17,7 +17,7 @@ for(const [name,version] of Object.entries(expected)) {
 if(path.dirname(dist)!==path.resolve(root))throw new Error('Invalid build directory');
 await rm(dist,{recursive:true,force:true});
 await mkdir(dist,{recursive:true});
-const applicationFiles=['index.html','styles.css','interaction.css','patient-content.css','mobile-install.css','rehab-design.css','manifest.webmanifest','app.mjs','assessment.mjs','ui-motion.mjs','clinical.mjs','reports.mjs','game.mjs','meditation.mjs','mobile-install.mjs','rehab-program.mjs','rehab-workbench.mjs','daily.mjs','education.mjs','inhaler.mjs','music.mjs'];
+const applicationFiles=['index.html','styles.css','interaction.css','patient-content.css','mobile-install.css','rehab-design.css','manifest.webmanifest','app.mjs','assessment.mjs','ui-motion.mjs','clinical.mjs','reports.mjs','game.mjs','meditation.mjs','mobile-install.mjs','rehab-program.mjs','rehab-workbench.mjs','daily.mjs','education.mjs','inhaler.mjs','inhaler-catalog.mjs','inhaler-market.mjs','inhaler-library.css','music.mjs'];
 for(const name of applicationFiles)await cp(path.join(root,name),path.join(dist,name));
 const vendor=path.join(dist,'assets','vendor');
 for(const name of ['favicon.svg','hulan-logo.jpg','rehab-garden.webp'])await cp(path.join(root,'assets',name),path.join(dist,'assets',name));
