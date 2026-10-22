@@ -1,0 +1,25 @@
+<view class="page {{senior?'senior':''}} {{reducedMotion?'reduced-motion':''}}">
+  <view class="report-heading"><image src="/assets/chapters/assessment.svg" mode="aspectFit" /><view><view class="page-title">检查材料</view><view class="field-help">可选，文件只保存在这部手机。</view></view></view>
+  <view class="error" wx:if="{{storageError}}">{{storageError}}</view>
+  <view class="error" wx:if="{{reportError}}">{{reportError}}<button class="link-button" bindtap="openSettings">处理本机资料</button></view>
+  <view class="panel">
+    <view class="section-title report-section-title">选择一份材料</view>
+    <view class="field-help">支持 PDF、PNG、JPEG。每份不超过 8 MB，最多 6 份。</view>
+    <view class="stack report-actions">
+      <button class="btn-primary" hover-class="press-lift" data-kind="album" bindtap="add" disabled="{{busy || reportError}}">从相册选择</button>
+      <button class="btn-secondary" hover-class="press-lift" data-kind="camera" bindtap="add" disabled="{{busy || reportError}}">拍照保存</button>
+      <button class="btn-secondary" hover-class="press-lift" data-kind="file" bindtap="add" disabled="{{busy || reportError}}">选择 PDF 或图片文件</button>
+    </view>
+    <view class="field-help report-caption" wx:if="{{busy}}">正在处理本机材料，请稍候。</view>
+  </view>
+  <view class="section-title">本机材料（{{items.length}} / 6）</view>
+  <view class="empty" wx:if="{{!items.length}}">还没有保存材料。也可以直接跳过。</view>
+  <view class="panel report-item" wx:for="{{items}}" wx:key="id">
+    <view class="report-name">{{item.name}}</view>
+    <view class="field-help">{{item.typeLabel}}　{{item.sizeLabel}}　{{item.dateLabel}}</view>
+    <view class="button-row"><button class="btn-secondary" data-id="{{item.id}}" bindtap="view" hover-class="press-lift" disabled="{{busy}}">查看</button><button class="btn-quiet" data-id="{{item.id}}" bindtap="remove" hover-class="press-lift" disabled="{{busy}}">删除</button></view>
+  </view>
+  <view class="status"><view class="status-title">专业数值请手工核对</view><view>保存材料不会自动识别、诊断或填写肺功能与量表结果。</view></view>
+  <button class="btn-secondary" bindtap="openAssessment" hover-class="press-lift" disabled="{{busy}}">返回填写健康资料</button>
+  <view class="field-help report-caption">材料不会上传或跨设备同步。清理微信小程序数据、换机或系统清理可能使本机资料丢失，请保留原始报告。</view>
+</view>

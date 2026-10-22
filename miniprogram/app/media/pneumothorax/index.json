@@ -1,0 +1,6 @@
+{
+  "navigationBarTitleText": "气胸恢复照护短片",
+  "usingComponents": {
+    "education-player": "/components/education-player/index"
+  }
+}

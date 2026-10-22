@@ -1,0 +1,134 @@
+{
+  "pages": [
+    "pages/home/index",
+    "pages/training/index",
+    "pages/learn/index",
+    "pages/records/index",
+    "pages/assessment/index",
+    "pages/plan/index",
+    "pages/daily/index",
+    "pages/inhaler/index",
+    "pages/music/index",
+    "pages/settings/index",
+    "pages/reports/index"
+  ],
+  "window": {
+    "navigationBarTitleText": "壶兰呼吸",
+    "navigationBarBackgroundColor": "#eef4f0",
+    "navigationBarTextStyle": "black",
+    "backgroundColor": "#eef4f0",
+    "backgroundTextStyle": "dark"
+  },
+  "tabBar": {
+    "color": "#4e655f",
+    "selectedColor": "#185b50",
+    "backgroundColor": "#fbfcf9",
+    "borderStyle": "white",
+    "list": [
+      {
+        "pagePath": "pages/home/index",
+        "text": "今日"
+      },
+      {
+        "pagePath": "pages/training/index",
+        "text": "训练"
+      },
+      {
+        "pagePath": "pages/learn/index",
+        "text": "学习"
+      },
+      {
+        "pagePath": "pages/records/index",
+        "text": "记录"
+      }
+    ]
+  },
+  "subPackages": [
+    {
+      "name": "lesson-copd",
+      "root": "media/copd",
+      "pages": [
+        "index"
+      ]
+    },
+    {
+      "name": "lesson-asthma",
+      "root": "media/asthma",
+      "pages": [
+        "index"
+      ]
+    },
+    {
+      "name": "lesson-bronchiectasis",
+      "root": "media/bronchiectasis",
+      "pages": [
+        "index"
+      ]
+    },
+    {
+      "name": "lesson-lungcancer",
+      "root": "media/lungcancer",
+      "pages": [
+        "index"
+      ]
+    },
+    {
+      "name": "lesson-pneumoconiosis",
+      "root": "media/pneumoconiosis",
+      "pages": [
+        "index"
+      ]
+    },
+    {
+      "name": "lesson-ild",
+      "root": "media/ild",
+      "pages": [
+        "index"
+      ]
+    },
+    {
+      "name": "lesson-pneumothorax",
+      "root": "media/pneumothorax",
+      "pages": [
+        "index"
+      ]
+    },
+    {
+      "name": "lesson-effusion",
+      "root": "media/effusion",
+      "pages": [
+        "index"
+      ]
+    },
+    {
+      "name": "lesson-tb",
+      "root": "media/tb",
+      "pages": [
+        "index"
+      ]
+    },
+    {
+      "name": "lesson-corpulmonale",
+      "root": "media/corpulmonale",
+      "pages": [
+        "index"
+      ]
+    },
+    {
+      "name": "lesson-osa",
+      "root": "media/osa",
+      "pages": [
+        "index"
+      ]
+    },
+    {
+      "name": "lesson-quit",
+      "root": "media/quit",
+      "pages": [
+        "index"
+      ]
+    }
+  ],
+  "sitemapLocation": "sitemap.json",
+  "lazyCodeLoading": "requiredComponents"
+}

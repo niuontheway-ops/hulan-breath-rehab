@@ -1,0 +1,50 @@
+<view class="page training-page {{senior ? 'senior' : ''}}">
+  <view class="training-heading"><text class="page-title">留一点时间，给呼吸</text><text class="text-muted">坐稳或舒适躺好，按自己的节奏来。</text></view>
+  <view class="gate-card {{gateUrgent ? 'gate-urgent' : ''}}" wx:if="{{!gateAllowed}}">
+    <text class="gate-title">{{gateTitle}}</text><text>{{gateMessage}}</text>
+    <button wx:if="{{storageUnavailable}}" class="btn-secondary" hover-class="press-lift" bindtap="onGoRecords">核对本机记录</button>
+    <button wx:elif="{{!hasProfile}}" class="btn-primary" hover-class="press-lift" bindtap="onGoAssessment">开始健康评估</button>
+    <button wx:else class="btn-secondary" hover-class="press-lift" bindtap="onGoAssessment">核对健康评估</button>
+  </view>
+  <view class="mode-tabs" role="group" aria-label="选择呼吸引导场景">
+    <button wx:for="{{modes}}" wx:key="id" class="mode-tab {{mode === item.id ? 'is-selected' : ''}}" data-mode="{{item.id}}" bindtap="onModeChange" hover-class="press-lift" aria-pressed="{{mode === item.id}}">{{item.label}}</button>
+  </view>
+  <view class="breathing-stage">
+    <view class="breathing-console"><view class="breathing-ring"><view class="ring-disc" style="{{ringStyle}}"></view><text class="phase-seconds">{{phaseSeconds}}</text><text class="seconds-unit" wx:if="{{running || paused}}">秒</text></view><view class="phase-copy"><text class="phase-title">{{phaseLabel}}</text><text>{{phaseHint}}</text></view></view>
+    <view wx:if="{{mode === 'demonstration'}}" class="demonstration-scene" aria-label="坐位呼吸示意，手随腹部轻缓起伏，呼气时嘴唇轻拢">
+      <view class="scene-window"><view class="scene-sun"></view><view class="scene-hill hill-back"></view><view class="scene-hill hill-front"></view></view>
+      <view class="patient-figure">
+        <view class="chair-back"></view><view class="chair-seat"></view><view class="chair-leg chair-leg-front"></view><view class="chair-leg chair-leg-back"></view>
+        <view class="patient-lower-leg"></view><view class="patient-shoe"></view><view class="patient-lap"></view>
+        <view class="patient-neck"></view><view class="patient-head"><view class="patient-hair"></view><view class="patient-ear"></view><view class="patient-eye"></view><view class="patient-nose"></view><view class="patient-mouth" style="{{mouthStyle}}"></view></view>
+        <view class="patient-torso"></view><view class="patient-belly" style="{{bellyStyle}}"></view><view class="patient-shirt-seam" style="{{bellyStyle}}"></view>
+        <view class="patient-upper-arm"></view><view class="patient-forearm" style="{{forearmStyle}}"></view><view class="patient-belly-hand" style="{{handStyle}}"></view><view class="patient-chest-arm"></view><view class="patient-chest-hand" style="{{chestStyle}}"></view>
+      </view>
+      <view class="body-cues"><text class="body-cue {{inhale ? 'cue-active' : ''}}">鼻吸，肩放松</text><text class="body-cue {{exhale ? 'cue-active' : ''}}">嘴唇轻拢，慢呼气</text><text class="body-cue">手随腹部轻缓起伏</text></view>
+    </view>
+    <view wx:else class="imagination-scene {{mode === 'stairs' ? 'stair-scene' : 'meadow-scene'}}" aria-label="坐位或卧位的想象引导，不需要真实爬楼或走动">
+      <view class="imagine-sun"></view><view class="distant-hill"></view><view class="near-hill"></view><view class="imagine-trail"></view>
+      <view wx:if="{{mode === 'stairs'}}" class="stairs"><view wx:for="{{steps}}" wx:key="id" class="imagine-step" style="{{item.style}}"></view></view>
+      <view wx:else class="grasses"><view wx:for="{{grasses}}" wx:key="id" class="grass-clump" style="{{item.style}}"><view></view><view></view><view></view></view></view>
+      <view class="imagine-walker" style="{{markerStyle}}"><view class="walker-shadow"></view><view class="walker-head"></view><view class="walker-body"></view><view class="walker-leg left" style="{{leftLegStyle}}"></view><view class="walker-leg right" style="{{rightLegStyle}}"></view></view>
+      <text class="imagine-tag">只是想象，不用起身</text>
+    </view>
+    <view wx:if="{{mode !== 'demonstration'}}" class="imagine-description"><text class="imagine-instruction">{{mode === 'stairs' ? '吸气想象上 1 级，呼气想象上 2 级。' : '吸气 2 秒想象走 2 步，呼气 4 秒想象走 4 步。'}}</text><text class="text-muted">引导中的想象位置：{{imagineCount}}{{mode === 'stairs' ? ' 级' : ' 步'}}，不是实际步数。</text></view>
+  </view>
+  <view class="session-progress"><view class="progress-copy"><text>主动确认 {{completedCycles}} / {{totalCycles}} 轮</text><text>引导 {{guidanceSeconds}} 秒</text></view><view class="progress-track"><view class="progress-value" style="width:{{progressPercent}}%"></view></view><text class="encouragement">{{encouragement}}</text><text class="motion-note">{{motionLabel}}</text></view>
+  <view class="urgent-message" wx:if="{{urgentBanner}}" role="alert">{{urgentBanner}}</view>
+  <view class="precheck-card" wx:if="{{gateAllowed && precheckOpen}}">
+    <text class="section-title">先确认此刻的状态</text><text class="text-muted">第 {{precheckIndex + 1}} / {{precheckTotal}} 项，已回答 {{precheckCount}} 项。不舒服就先休息。</text>
+    <view class="precheck-row"><text class="precheck-label">{{precheckQuestion.label}}</text><radio-group class="precheck-options" data-key="{{precheckQuestion.key}}" bindchange="onPrecheckChange"><label><radio value="yes" checked="{{precheckQuestion.value === true}}" color="#185b50" />{{precheckQuestion.key === 'clinicianCleared' ? '已允许' : '有'}}</label><label><radio value="no" checked="{{precheckQuestion.value === false}}" color="#185b50" />{{precheckQuestion.key === 'clinicianCleared' ? '未允许 / 不清楚' : '没有'}}</label></radio-group></view>
+    <button wx:if="{{precheckIndex > 0}}" class="btn-quiet precheck-back" hover-class="press-lift" bindtap="onPrecheckBack">上一项</button>
+  </view>
+  <view class="training-actions" wx:if="{{gateAllowed}}">
+    <button class="btn-primary" wx:if="{{needsPrecheck || (!running && !awaiting && !paused)}}" disabled="{{hasUnsaved}}" hover-class="press-lift" bindtap="onStart">{{paused || awaiting ? '确认状态，继续' : complete || stopped ? '重新开始引导' : '确认状态，开始练习'}}</button>
+    <button class="btn-primary confirm-round" wx:if="{{awaiting && !needsPrecheck}}" hover-class="press-lift" bindtap="onConfirm">这一轮舒适，确认完成</button>
+    <button class="btn-secondary" wx:if="{{running}}" hover-class="press-lift" bindtap="onPause">暂停休息</button>
+    <button class="btn-secondary" wx:if="{{hasSession && !complete && !stopped}}" hover-class="press-lift" bindtap="onStop">结束并保存本次记录</button>
+  </view>
+  <view class="save-feedback {{hasUnsaved ? 'save-failed' : ''}}" wx:if="{{saveMessage}}" role="status"><text>{{saveMessage}}</text><button class="btn-secondary" wx:if="{{hasUnsaved}}" hover-class="press-lift" bindtap="onRetrySave">重试保存到手机</button></view>
+  <text class="training-footnote">完成一轮后，需要你主动确认。引导时长不是实际运动量；离开本页不会自动补计轮数。点击结束或完成全部轮数后，汇总记录只保存到这台手机。</text>
+  <view class="safety-stop"><button class="stop-button" hover-class="press-lift" bindtap="onEmergencyStop">不舒服，立即停止</button></view>
+</view>

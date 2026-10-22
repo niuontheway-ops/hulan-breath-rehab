@@ -1,0 +1,8 @@
+<view class="page {{senior ? 'senior' : ''}} {{reducedMotion ? 'reduced-motion' : ''}}">
+  <image class="music-scene" src="/assets/rehab-garden.webp" mode="aspectFill" />
+  <view class="page-title">给呼吸一点安静</view><view class="page-intro">音乐陪伴放松，按自己的节奏休息。</view>
+  <view class="player-panel panel"><view class="now-playing">{{track.name}}</view><view class="field-help">{{track.description}}</view><view class="music-status" aria-live="polite">{{status}}</view><view wx:if="{{error}}" class="error">{{error}}</view><view class="button-row"><button wx:if="{{!playing && !loading}}" class="btn-primary" hover-class="press-lift" bindtap="play">播放 · 需联网</button><button wx:elif="{{loading}}" class="btn-secondary" hover-class="press-lift" bindtap="pause">取消加载</button><button wx:else class="btn-secondary" hover-class="press-lift" bindtap="pause">暂停音乐</button></view><view class="volume-row"><text>音量 {{volume}}%</text><slider value="{{volume}}" min="0" max="100" step="5" activeColor="#185b50" block-color="#185b50" block-size="22" bindchange="changeVolume" /></view></view>
+  <view class="section-title">熟悉的七首曲目</view><button wx:for="{{tracks}}" wx:key="id" data-id="{{item.id}}" class="track-row {{selectedId === item.id ? 'selected' : ''}}" hover-class="press-lift" bindtap="selectTrack"><view class="track-title">{{item.name}}<text wx:if="{{selectedId === item.id}}" class="track-selection">已选</text></view><view class="field-help">{{item.description}}</view></button>
+  <view class="field-help music-privacy">只有点击播放才加载所选音频，不发送健康记录。退出本页自动停止音乐。音乐用于放松陪伴，不能代替治疗。</view>
+  <button class="btn-secondary training-entry" hover-class="press-lift" bindtap="openTraining">进入呼吸与冥想练习</button>
+</view>

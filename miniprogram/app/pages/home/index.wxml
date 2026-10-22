@@ -1,0 +1,24 @@
+<view class="page {{senior?'senior':''}} {{reducedMotion?'reduced-motion':''}}">
+  <view class="brand-row">
+    <image class="brand-logo" src="/assets/hulan-logo.jpg" mode="aspectFit" aria-label="壶兰呼吸正式标志" />
+    <view class="brand-body"><view class="brand-name">壶兰呼吸</view><view class="brand-dept"><view>莆田学院附属医院</view><view>呼吸与危重症医学科三区</view></view></view>
+    <button class="font-button" bindtap="toggleSenior" hover-class="press-lift" aria-label="切换大字模式">大字{{senior?'开':'关'}}</button>
+  </view>
+  <view class="error" wx:if="{{storageError}}">{{storageError}}<button class="link-button" bindtap="openSettings">处理本机资料</button></view>
+  <view class="hero">
+    <image class="hero-image" src="/assets/rehab-garden.webp" mode="aspectFill" aria-label="绿意花园里的轻柔呼吸练习" />
+    <view class="hero-copy"><view class="hero-title"><view>跟着节奏</view><view>轻柔呼吸</view></view><view class="hero-detail"><view>坐稳，放松肩膀。</view><view>身体舒适比完成数字更重要。</view></view></view>
+  </view>
+  <button class="btn-primary home-start" bindtap="start" hover-class="press-lift">{{hasProfile?'查看并开始训练':'先做一次评估'}}</button>
+  <view class="privacy-line"><view class="local-mark"></view><text>健康记录保存在这部手机，不上传</text></view>
+  <view class="today-strip">
+    <view><view class="field-help">今天已确认的呼吸</view><view class="today-number">{{completedToday}}<text> 轮</text></view></view>
+    <view><view class="field-help">每日评估</view><view class="today-status">{{dailyDone?'已记录':'尚未记录'}}</view></view>
+  </view>
+  <view class="section-title">照顾好每一天</view>
+  <button wx:for="{{entries}}" wx:key="id" class="entry-row" data-id="{{item.id}}" bindtap="openEntry" hover-class="press-lift">
+    <image class="entry-image" src="/assets/chapters/{{item.image}}.svg" mode="aspectFit" /><view class="entry-body"><view class="entry-title">{{item.title}}</view><view class="entry-detail">{{item.detail}}</view></view><text class="entry-chevron">›</text>
+  </button>
+  <button class="entry-row" bindtap="openLearn" hover-class="press-lift"><image class="entry-image" src="/assets/chapters/education.svg" mode="aspectFit" /><view class="entry-body"><view class="entry-title">疾病宣教</view><view class="entry-detail">看短片，学日常照护</view></view><text class="entry-chevron">›</text></button>
+  <button class="link-button" bindtap="openSettings">本机数据与设置</button>
+</view>

@@ -8,6 +8,7 @@
 | 中文和英文识别模型 | @tesseract.js-data/chi_sim、eng，4.0.0_best_int | Apache-2.0 | https://github.com/naptha/tessdata |
 | Playwright（开发验证） | 1.62.1 | Apache-2.0 | https://github.com/microsoft/playwright |
 | pdf-lib（模拟 PDF 测试） | 1.17.1 | MIT | https://github.com/Hopding/pdf-lib |
+| miniprogram-compiler（原生模板编译验证） | 0.2.3 | MIT | https://github.com/wechat-miniprogram/miniprogram-simulate |
 | edge-tts（语音生产工具） | 7.2.8 | LGPLv3；SRT composer 为 MIT | https://github.com/rany2/edge-tts |
 
 构建时将运行依赖的许可证复制至 `dist/assets/vendor/`，PDF.js 的字体和字符映射资源保留上游资源文件。语言数据来源：

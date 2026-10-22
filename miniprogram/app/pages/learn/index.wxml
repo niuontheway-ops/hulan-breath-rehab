@@ -1,0 +1,26 @@
+<view class="page {{senior ? 'senior' : ''}} {{reducedMotion ? 'reduced-motion' : ''}}">
+  <view class="page-title">了解，让呼吸更从容</view>
+  <view class="page-intro">看一段短片，记住今天能做的小事。</view>
+  <view wx:if="{{storageError}}" class="error">{{storageError}}</view>
+  <view class="field">
+    <text class="field-label">选择想了解的疾病</text>
+    <picker mode="selector" range="{{topics}}" range-key="title" value="{{selectedIndex}}" bindchange="changeTopic"><view class="input picker-line">{{topic.title}}<text>更换</text></view></picker>
+  </view>
+  <view class="lesson-hero">
+    <image class="lesson-poster" src="{{topic.video.poster}}" mode="aspectFill" />
+    <view class="lesson-hero-body"><view class="hero-title">{{topic.title}} · 日常照护</view><view class="field-help">{{topic.intro}}</view><button class="btn-primary" hover-class="press-lift" bindtap="watchLesson">观看照护短片</button><view class="field-help lesson-download">首次观看会载入此短片分包。</view></view>
+  </view>
+  <view class="section-title">今天记住这几件事</view>
+  <view class="panel">
+    <block wx:for="{{topic.sections}}" wx:key="title"><view wx:for="{{item.items}}" wx:for-item="point" wx:key="*this" class="care-point">{{point}}</view></block>
+  </view>
+  <view class="status danger"><view class="status-title">这些情况，及时求助</view><view wx:for="{{topic.urgent}}" wx:key="*this">{{item}}</view></view>
+  <button class="btn-secondary" hover-class="press-lift" bindtap="openInhalers">看看吸入器怎么用</button>
+  <button class="link-button" bindtap="toggleDetails">{{detailsOpen ? '收起详细注意事项' : '更多日常注意事项与来源'}}</button>
+  <view wx:if="{{detailsOpen}}" class="details-body">
+    <view wx:for="{{topic.details}}" wx:key="title" class="panel-quiet"><view class="section-title">{{item.title}}</view><view wx:for="{{item.items}}" wx:for-item="point" wx:key="*this" class="bullet">{{point}}</view></view>
+    <view class="field-help" wx:for="{{topic.additionalAlerts}}" wx:key="*this">{{item}}</view>
+    <view class="section-title">资料来源</view><button wx:for="{{topic.sources}}" wx:key="url" class="link-button" data-index="{{index}}" bindtap="copySource">{{item.label}} · 复制链接</button>
+  </view>
+  <view class="field-help footer-note">照护知识不能代替个人医嘱。不要自行调整药物、氧流量或训练负荷。</view>
+</view>

@@ -1,0 +1,17 @@
+{
+  "appid": "touristappid",
+  "projectname": "hulan-breath-rehab",
+  "description": "壶兰呼吸康复：患者本机记录与呼吸训练",
+  "compileType": "miniprogram",
+  "miniprogramRoot": "app/",
+  "libVersion": "3.6.0",
+  "setting": {
+    "urlCheck": true,
+    "es6": true,
+    "enhance": true,
+    "postcss": true,
+    "minified": true,
+    "ignoreUploadUnusedFiles": false
+  },
+  "packOptions": {"ignore": [], "include": []}
+}

@@ -1,0 +1,35 @@
+{
+  "sourceVersion": "2.1.0",
+  "adapters": [
+    "Pure functions only; browser rendering excluded",
+    "CommonJS module syntax",
+    "Object.hasOwn compatibility",
+    "Shanghai calendar without Intl"
+  ],
+  "files": [
+    {
+      "source": "clinical.mjs",
+      "sourceSha256": "3474c17747cc48132e57102761cb4492624db68a15718af1ec80404ec9d2943c",
+      "output": "core/clinical.js",
+      "outputSha256": "86447076a3623a8e763651c216682b153d374469920f34d48f2a8adfb9d1c41e"
+    },
+    {
+      "source": "daily.mjs",
+      "sourceSha256": "d6a4d1158974c87451c2ed8663b904976be3a6195e7ccb2e13cd65c72bb3c934",
+      "output": "core/daily.js",
+      "outputSha256": "de9a3df269b9f99dd89a61951e91cd8f39ba1586d93513776029d0ed25a806d2"
+    },
+    {
+      "source": "game.mjs",
+      "sourceSha256": "eccc5397622c41240fe0eba63d1de65821440b77aa2190890424a01d54488c82",
+      "output": "core/game.js",
+      "outputSha256": "17843d452315442ac1de74a628683ae7e8a7413873c93ad11fee1a13249b54d1"
+    },
+    {
+      "source": "meditation.mjs",
+      "sourceSha256": "085229d3f962952af1583bb6e81f820eaac64c929ae6c386a6d2741b3842a3c5",
+      "output": "core/meditation.js",
+      "outputSha256": "1d4c101cbbc3a03888f4c79ee9e900e8c99abfe17ca2c389f96240b5ae9149c4"
+    }
+  ]
+}

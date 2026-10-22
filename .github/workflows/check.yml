@@ -19,4 +19,5 @@ jobs:
       - run: pnpm install --frozen-lockfile --ignore-scripts
       - run: pnpm test
       - run: pnpm check
+      - run: pnpm check:mini
       - run: pnpm build

@@ -1,0 +1,6 @@
+{
+  "navigationBarTitleText": "慢阻肺照护短片",
+  "usingComponents": {
+    "education-player": "/components/education-player/index"
+  }
+}

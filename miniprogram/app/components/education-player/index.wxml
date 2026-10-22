@@ -1,0 +1,13 @@
+<view class="page {{senior ? 'senior' : ''}} {{reducedMotion ? 'reduced-motion' : ''}}">
+  <block wx:if="{{topic}}"><view class="page-title">{{topic.title}}照护短片</view><view class="page-intro">温和聆听，记住日常照护要点。</view>
+    <video wx:if="{{videoSrc}}" id="lesson-video" class="lesson-video" src="{{videoSrc}}" poster="{{topic.video.poster}}" title="{{topic.video.title}}" controls="{{true}}" autoplay="{{playRequested}}" enable-progress-gesture="{{true}}" show-background-playback-button="{{false}}" show-casting-button="{{false}}" bindtimeupdate="timeUpdate" bindplay="videoPlayed" bindpause="videoPaused" bindended="videoEnded" binderror="videoError" />
+    <image wx:else class="lesson-cover" src="{{topic.video.poster}}" mode="aspectFit" />
+    <view class="caption" aria-live="polite">{{caption || '点击播放后显示同步字幕。'}}</view>
+    <view wx:if="{{error}}" class="error">{{error}}</view>
+    <button wx:if="{{!videoSrc}}" class="btn-primary" hover-class="press-lift" loading="{{loading}}" disabled="{{loading}}" bindtap="prepareVideo">{{error ? '重新载入本地短片' : '播放本地短片'}}</button>
+    <view class="field-help local-note">视频保存在本机。初次进入此页需要载入静态分包，健康记录不会上传。</view>
+    <view class="section-title">文字要点</view><view class="panel"><block wx:for="{{topic.sections}}" wx:key="title"><view wx:for="{{item.items}}" wx:for-item="point" wx:key="*this" class="bullet">{{point}}</view></block></view>
+    <view class="status danger"><view wx:for="{{topic.urgent}}" wx:key="*this">{{item}}</view></view>
+  </block><view wx:else class="error">{{error}}</view>
+  <button class="btn-secondary" hover-class="press-lift" bindtap="back">返回学习</button>
+</view>

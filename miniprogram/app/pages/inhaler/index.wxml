@@ -1,0 +1,33 @@
+<view class="page {{senior ? 'senior' : ''}} {{reducedMotion ? 'reduced-motion' : ''}}">
+  <image class="inhaler-chapter" src="/assets/chapters/inhaler.svg" mode="aspectFit" />
+  <view class="page-title">找到手中的吸入器</view><view class="page-intro">药名相同，也要核对装置。</view>
+  <view class="panel">
+    <view class="field"><text class="field-label">药名 / 装置名</text><input class="input" value="{{query}}" placeholder="如：能倍乐、思力华" bindinput="search" confirm-type="search" maxlength="60" /></view>
+    <view class="field"><text class="field-label">选择匹配的装置</text><picker mode="selector" range="{{options}}" range-key="name" value="{{selectedIndex}}" bindchange="chooseDevice"><view class="input">{{options[selectedIndex].name}}</view></picker></view>
+    <view class="field-help">找到 {{matchCount}} 项。请对照药盒和实物选择。</view>
+    <button class="link-button" bindtap="toggleFilter">{{filterOpen ? '收起类别筛选' : '按装置类别筛选'}}</button>
+    <picker wx:if="{{filterOpen}}" mode="selector" range="{{categories}}" range-key="name" value="{{categoryIndex}}" bindchange="changeCategory"><view class="input">{{categories[categoryIndex].name}}</view></picker>
+  </view>
+  <view wx:if="{{!matchCount}}" class="status warning">没有匹配项。已隐藏之前的教学，请核对包装全名，或携带装置请医护确认。</view>
+  <view wx:if="{{current}}" class="device-body">
+    <view class="tag">{{current.device}}</view><view class="device-name">{{current.name}}</view><view class="field-help">{{current.brands}}</view>
+    <view class="breathing-cue"><view class="cue-label">吸气要领</view><view>{{current.breathCue}}</view></view>
+    <view class="panel video-panel"><view class="section-title">操作教学视频</view>
+      <block wx:if="{{current.videoDetails}}"><view>{{current.videoDetails.title}}</view><view class="field-help">{{current.videoDetails.provider}} · {{current.videoDetails.language}}</view><view class="field-help source-note">{{current.videoDetails.scope}}</view><view class="field-help source-note">{{current.videoDetails.availability}}</view><button class="btn-secondary" hover-class="press-lift" data-kind="video" data-url="{{current.videoDetails.url}}" bindtap="copyLink">复制原视频链接</button><view class="field-help source-note">请在手机浏览器打开原站，不会上传本机健康记录。</view></block>
+      <view wx:else class="field-help">{{current.videoMissingReason || current.missingReason || '尚未找到可核对的本型号专属视频，请医护结合实物演示。'}}</view>
+    </view>
+    <view wx:if="{{current.preparation.length}}" class="panel-quiet"><view class="section-title">用药前准备</view><view wx:for="{{current.preparation}}" wx:key="*this" class="bullet">{{item}}</view></view>
+    <view wx:if="{{current.methodReady}}" class="panel"><view class="section-title">按顺序练习</view><view wx:for="{{current.steps}}" wx:key="*this" class="device-step"><text class="step-number">{{index + 1}}</text><text>{{item}}</text></view></view>
+    <view wx:else class="status warning"><view class="status-title">先核对专属说明</view><view>{{current.teachingMissingReason || current.missingReason || '产品资料已核对，完整器具操作尚待核实。不要套用其他品牌的步骤，请医护核对随盒说明。'}}</view></view>
+    <view class="status warning"><view class="status-title">容易弄错的地方</view><view wx:for="{{current.notes}}" wx:key="*this" class="bullet">{{item}}</view></view>
+    <button class="link-button" bindtap="toggleDetails">{{detailsOpen ? '收起首次使用、清洁与来源' : '首次使用、清洁与来源'}}</button>
+    <view wx:if="{{detailsOpen}}">
+      <view wx:if="{{current.firstUse.length}}" class="panel-quiet"><view class="section-title">首次使用 / 久未使用</view><view wx:for="{{current.firstUse}}" wx:key="*this" class="bullet">{{item}}</view></view>
+      <view wx:if="{{current.cleaning.length}}" class="panel-quiet"><view class="section-title">清洁与保存</view><view wx:for="{{current.cleaning}}" wx:key="*this" class="bullet">{{item}}</view></view>
+      <view class="section-title">备用视频</view><view wx:for="{{current.videoOptions}}" wx:key="url" class="panel-quiet"><button class="link-button" data-kind="video" data-url="{{item.url}}" bindtap="copyLink">{{item.title}} · {{item.language}}</button><view class="field-help">{{item.availability}}</view></view>
+      <view wx:if="{{current.legacyVideos.length}}" class="field-help">保留原站次入口；发布者不是已核实的医院官方账号，观看前核对具体装置。</view><button wx:for="{{current.legacyVideos}}" wx:key="url" class="link-button" data-kind="video" data-url="{{item.url}}" bindtap="copyLink">{{item.title}} · 原站次入口</button>
+      <view class="section-title">核对来源</view><view class="field-help">核查日期 {{current.checked}}。{{current.market.limitations}}</view><button wx:for="{{current.sources}}" wx:key="url" class="link-button" data-url="{{item.url}}" bindtap="copyLink">{{item.label}} · 复制链接</button>
+    </view>
+  </view>
+  <view class="field-help scope-note">{{meta.inhalerEntries}} 个产品、装置或附件入口；{{meta.reviewedMethods}} 项方法已核对。供应因地区而异，未穷尽全国在售型号。这里只教装置操作，不选药、不统一剂量。</view>
+</view>

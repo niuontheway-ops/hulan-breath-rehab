@@ -1,0 +1,6 @@
+{
+  "navigationBarTitleText": "肺结核照护短片",
+  "usingComponents": {
+    "education-player": "/components/education-player/index"
+  }
+}

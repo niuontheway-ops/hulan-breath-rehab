@@ -1,0 +1,6 @@
+{
+  "navigationBarTitleText": "胸腔积液照护短片",
+  "usingComponents": {
+    "education-player": "/components/education-player/index"
+  }
+}

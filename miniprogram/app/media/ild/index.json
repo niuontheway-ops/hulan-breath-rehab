@@ -1,0 +1,6 @@
+{
+  "navigationBarTitleText": "间质性肺病照护短片",
+  "usingComponents": {
+    "education-player": "/components/education-player/index"
+  }
+}
